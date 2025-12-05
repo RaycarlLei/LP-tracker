@@ -1,0 +1,2150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SOL/USDC PancakeSwap V3 (Solana) Pool Viewer</title>
+  <!-- Chart.js for charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #020617;
+      --bg-elevated: rgba(15, 23, 42, 0.98);
+      --border-subtle: rgba(148, 163, 184, 0.22);
+      --accent: #49e55e;
+      --accent-soft: rgba(16, 229, 94, 0.18);
+      --text-main: #e5e7eb;
+      --text-muted: #94a3b8;
+      --danger: #f97373;
+      --radius-lg: 14px;
+      --radius-md: 10px;
+      --shadow-soft: 0 22px 60px rgba(15, 23, 42, 0.85);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 32px 16px 40px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top, #1f2937 0, #020617 55%, #000 100%);
+      color: var(--text-main);
+    }
+
+    .main {
+      width: 100%;
+      max-width: 960px;
+    }
+
+    .page-header {
+      margin-bottom: 18px;
+    }
+
+    .page-title-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    h1 {
+      font-size: 26px;
+      letter-spacing: 0.02em;
+      margin: 0;
+    }
+
+    .pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      color: var(--text-muted);
+      background: rgba(15, 23, 42, 0.75);
+    }
+
+    .tagline {
+      margin: 0;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .small {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .card {
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      margin-top: 18px;
+      background:
+        linear-gradient(145deg, rgba(15, 23, 42, 0.96), rgba(12, 18, 33, 0.96));
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(18px);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      gap: 8px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(15, 118, 110, 0.15);
+      border: 1px solid rgba(45, 212, 191, 0.4);
+      color: #a5f3fc;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .input-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    input {
+      flex: 1 1 260px;
+      min-width: 0;
+      padding: 9px 11px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text-main);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+    }
+
+    input::placeholder {
+      color: rgba(148, 163, 184, 0.7);
+    }
+
+    input:focus {
+      border-color: rgba(34, 197, 94, 0.8);
+      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.55);
+      background: rgba(15, 23, 42, 1);
+    }
+
+    button {
+      padding: 9px 16px;
+      cursor: pointer;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(34, 197, 94, 0.25);
+      background: rgba(34, 197, 94, 0.12);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: var(--text-main);
+      font-weight: 500;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.4), inset 0 1px 0 rgba(34, 197, 94, 0.15);
+      transition: background-color 0.16s ease, transform 0.08s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      background: rgba(34, 197, 94, 0.18);
+      border-color: rgba(34, 197, 94, 0.35);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.5), inset 0 1px 0 rgba(34, 197, 94, 0.2);
+    }
+
+    button:active {
+      transform: translateY(0);
+      background: rgba(34, 197, 94, 0.15);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.3), inset 0 1px 0 rgba(34, 197, 94, 0.15);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: default;
+      box-shadow: none;
+      background: rgba(34, 197, 94, 0.08);
+    }
+
+    .button-icon {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      background: rgba(34, 197, 94, 0.25);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    .run-simulation-btn {
+      padding: 10px 18px !important;
+      font-size: 13px !important;
+      font-weight: 600 !important;
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.25), rgba(16, 185, 129, 0.2)) !important;
+      border: 2px solid rgba(34, 197, 94, 0.5) !important;
+      box-shadow: 
+        0 6px 20px rgba(34, 197, 94, 0.3),
+        0 0 0 1px rgba(34, 197, 94, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+      gap: 6px !important;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .run-simulation-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .run-simulation-btn:hover::before {
+      left: 100%;
+    }
+
+    .run-simulation-btn:hover {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.35), rgba(16, 185, 129, 0.3)) !important;
+      border-color: rgba(34, 197, 94, 0.7) !important;
+      transform: translateY(-2px) !important;
+      box-shadow: 
+        0 8px 28px rgba(34, 197, 94, 0.4),
+        0 0 0 1px rgba(34, 197, 94, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+    }
+
+    .run-simulation-btn:active {
+      transform: translateY(0) !important;
+      box-shadow: 
+        0 4px 16px rgba(34, 197, 94, 0.25),
+        0 0 0 1px rgba(34, 197, 94, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .play-icon {
+      font-size: 14px;
+      line-height: 1;
+      color: rgba(34, 197, 94, 1);
+      text-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      background: rgba(34, 197, 94, 0.2);
+      border-radius: 50%;
+      border: 1px solid rgba(34, 197, 94, 0.4);
+    }
+
+    .loading-text {
+      min-height: 16px;
+    }
+
+    .error {
+      color: var(--danger);
+      margin-top: 8px;
+      font-size: 12px;
+    }
+
+    .results-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .results-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .muted-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 10px 18px;
+      margin-bottom: 10px;
+    }
+
+    .stat {
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: radial-gradient(circle at top left, rgba(34, 197, 94, 0.06), transparent 55%);
+      border: 1px solid rgba(148, 163, 184, 0.26);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .clickable-stat .stat-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .stat-value {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-main);
+      word-break: break-all;
+    }
+
+    .clickable-stat {
+      cursor: pointer;
+      transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+      user-select: none;
+    }
+
+    .clickable-stat:hover {
+      background: radial-gradient(circle at top left, rgba(34, 197, 94, 0.12), transparent 55%);
+      border-color: rgba(34, 197, 94, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .clickable-stat:active {
+      transform: translateY(0);
+      background: radial-gradient(circle at top left, rgba(34, 197, 94, 0.08), transparent 55%);
+    }
+
+    .swap-icon {
+      font-size: 14px;
+      color: var(--accent);
+      opacity: 0.7;
+      transition: transform 0.3s ease, opacity 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+
+    .clickable-stat:hover .swap-icon {
+      opacity: 1;
+      transform: rotate(180deg);
+      background: rgba(34, 197, 94, 0.2);
+      border-color: rgba(34, 197, 94, 0.4);
+    }
+
+    pre {
+      font-size: 11px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      background: rgba(15, 23, 42, 0.96);
+      border-radius: 12px;
+      padding: 10px 12px;
+      max-height: 320px;
+      overflow: auto;
+      border: 1px solid rgba(30, 64, 175, 0.5);
+      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.8);
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+        "Courier New", monospace;
+      font-size: 11px;
+      color: #a5b4fc;
+    }
+
+    /* chart card */
+    .chart-container {
+      margin-top: 16px;
+    }
+
+    .range-control {
+      margin: 12px 0 6px;
+      padding: 12px 14px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(34, 197, 94, 0.25);
+      background:
+        linear-gradient(135deg, rgba(15, 118, 110, 0.15), rgba(34, 197, 94, 0.05)),
+        rgba(15, 23, 42, 0.85);
+      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.45), 0 10px 25px rgba(15, 23, 42, 0.5);
+    }
+
+    .range-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(226, 232, 240, 0.75);
+    }
+
+    #daysRange {
+      width: 100%;
+      appearance: none;
+      -webkit-appearance: none;
+      margin-top: 12px;
+      height: 6px;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    #daysRange::-webkit-slider-runnable-track {
+      height: 6px;
+      border-radius: 999px;
+      background:
+        linear-gradient(90deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.8));
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+
+    #daysRange::-moz-range-track {
+      height: 6px;
+      border-radius: 999px;
+      background:
+        linear-gradient(90deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.8));
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+
+    #daysRange::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid rgba(15, 23, 42, 0.95);
+      background:
+        radial-gradient(circle at 30% 30%, rgba(34, 197, 94, 0.4), #216e3e, #15803d);
+      box-shadow: 0 4px 12px rgba(21, 128, 61, 0.35), inset 0 1px 0 rgba(34, 197, 94, 0.2);
+      margin-top: -7px;
+      transition: box-shadow 0.2s ease;
+    }
+
+    #daysRange::-webkit-slider-thumb:hover {
+      box-shadow: 0 5px 16px rgba(21, 128, 61, 0.45), inset 0 1px 0 rgba(34, 197, 94, 0.3);
+    }
+
+    #daysRange::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid rgba(15, 23, 42, 0.95);
+      background:
+        radial-gradient(circle at 30% 30%, rgba(34, 197, 94, 0.4), #136e34, #15803d);
+      box-shadow: 0 4px 12px rgba(21, 128, 61, 0.35), inset 0 1px 0 rgba(34, 197, 94, 0.2);
+      transition: box-shadow 0.2s ease;
+    }
+
+    #daysRange::-moz-range-thumb:hover {
+      box-shadow: 0 5px 16px rgba(21, 128, 61, 0.45), inset 0 1px 0 rgba(34, 197, 94, 0.3);
+    }
+
+    #daysRange:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.4);
+    }
+
+    .chart-wrapper {
+      position: relative;
+      width: 100%;
+      height: 260px;
+      margin-top: 10px;
+      border-radius: 12px;
+      background: radial-gradient(circle at top left, rgba(34, 197, 94, 0.06), rgba(15, 23, 42, 0.96));
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      padding: 10px 12px 12px;
+    }
+
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .chart-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+    }
+
+    .collapsible-section {
+      margin-bottom: 6px;
+    }
+
+    .collapsible-header {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      padding: 4px 0;
+      user-select: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .collapsible-header:hover {
+      opacity: 0.8;
+    }
+
+    .collapsible-arrow {
+      display: inline-block;
+      font-size: 10px;
+      color: var(--text-muted);
+      transition: transform 0.2s ease;
+      width: 12px;
+      text-align: center;
+    }
+
+    .collapsible-content {
+      margin-top: 8px;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding-top: 22px;
+      }
+
+      .card {
+        padding: 16px 14px;
+      }
+
+      h1 {
+        font-size: 22px;
+      }
+
+      button {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .chart-wrapper {
+        height: 240px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="main">
+    <header class="page-header">
+      <div class="page-title-row">
+        <h1>SOL / USDC Pool Viewer</h1>
+        <span class="pill">PancakeSwap V3 · Solana</span>
+      </div>
+      <p class="tagline">
+        Live pool metrics fetched from the GeckoTerminal DEX API
+        (<code>network = solana</code>, <code>dex = pancakeswap-v3</code>).
+      </p>
+    </header>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Pool ID</div>
+        <span class="badge">GeckoTerminal Pool Address</span>
+      </div>
+
+      <label for="poolId">Paste any Solana pool address to inspect its stats.</label>
+      <div class="input-row">
+        <input
+          id="poolId"
+          type="text"
+          value="DJNtGuBGEQiUCWE8F981M2C3ZghZt2XLD8f2sQdZ6rsZ"
+          placeholder="DJNtGuBGEQiUCWE8F981M2C3ZghZt2XLD8f2sQdZ6rsZ"
+        />
+        <button id="loadBtn">
+          <span class="button-icon"></span>
+           Load Pool
+        </button>
+      </div>
+      <div class="input-row" style="margin-top: 10px;">
+        <input
+          id="birdeyeApiKey"
+          type="text"
+          value="2412d6b52e4b4d9095f9a5991ea8196c"
+          placeholder="Birdeye API Key (for TVL / volume)"
+        />
+        <button id="checkBirdeyeKeyBtn">
+          <span class="button-icon"></span>
+          Check Key
+        </button>
+      </div>
+      <div class="small" id="birdeyeStatus" style="margin-top: 4px; opacity: 0.9;"></div>
+      <div class="small loading-text" id="loading"></div>
+      <div id="error" class="error"></div>
+    </div>
+
+    <div id="results" class="card" style="display:none;">
+      <div class="results-card-header">
+        <div>
+          <div class="results-title">Parsed Pool Data</div>
+          <div class="muted-label">Key metrics</div>
+        </div>
+        <div class="muted-label">Live from GeckoTerminal</div>
+      </div>
+      <div id="poolInfo"></div>
+
+      <!-- chart area -->
+      <div class="chart-container">
+        <div class="muted-label">
+          Last <span id="daysLabel">30</span> Days Liquidity & Volume
+        </div>
+        <div class="small">
+          TVL line uses current liquidity as an approximate level, daily volume from OHLCV candles.
+        </div>
+
+        <div class="range-control">
+          <div class="range-meta">
+            <span>Lookback window</span>
+            <span></span>
+          </div>
+          <input
+            id="daysRange"
+            type="range"
+            min="2"
+            max="180"
+            step="1"
+            value="30"
+          />
+        </div>
+
+        <div class="chart-wrapper">
+          <canvas id="tvlVolumeChart"></canvas>
+        </div>
+        <div class="chart-legend">
+          <div class="chart-legend-item" id="tvlLegend">
+            <span class="legend-dot" style="background: #1d5331;"></span>
+            <span>TVL (USD)</span>
+          </div>
+          <div class="chart-legend-item">
+            <span class="legend-dot" style="background: rgba(148, 163, 184, 0.9);"></span>
+            <span>Daily Volume (USD)</span>
+          </div>
+          <div class="chart-legend-item">
+            <span class="legend-dot" style="background: rgba(250, 204, 21, 0.9);"></span>
+            <span>High Price</span>
+          </div>
+          <div class="chart-legend-item">
+            <span class="legend-dot" style="background: rgba(248, 113, 113, 0.9);"></span>
+            <span>Low Price</span>
+          </div>
+          <div class="chart-legend-item">
+            <span class="legend-dot" style="background: rgba(244, 114, 182, 0.9);"></span>
+            <span>Trades Count</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="collapsible-section" style="margin-top: 14px;">
+        <div class="collapsible-header" onclick="toggleCollapsible('rawJsonSection')">
+          <span class="collapsible-arrow" id="rawJsonArrow">▶</span>
+          <span class="muted-label" style="margin-left: 6px;">Raw GeckoTerminal Response</span>
+          <span class="small" style="margin-left: 8px; opacity: 0.7;">Full JSON payload from GeckoTerminal pool snapshot API.</span>
+        </div>
+        <div class="collapsible-content" id="rawJsonSection" style="display: none;">
+          <pre id="rawJson"></pre>
+        </div>
+      </div>
+
+      <div class="collapsible-section" style="margin-top: 10px;">
+        <div class="collapsible-header" onclick="toggleCollapsible('birdeyeRawJsonSection')">
+          <span class="collapsible-arrow" id="birdeyeRawJsonArrow">▶</span>
+          <span class="muted-label" style="margin-left: 6px;">Raw Birdeye OHLCV Response</span>
+          <span class="small" style="margin-left: 8px; opacity: 0.7;">Full JSON payload from Birdeye OHLCV API (if available).</span>
+        </div>
+        <div class="collapsible-content" id="birdeyeRawJsonSection" style="display: none;">
+          <pre id="birdeyeRawJson"></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Impermanent Loss Simulator -->
+    <div class="card" id="ilSimulatorCard" style="margin-top: 20px;">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Impermanent Loss Simulator</div>
+          <div class="muted-label">PancakeSwap V3 · SOL / USDC · Monte Carlo</div>
+        </div>
+        <span class="badge">IL · Distribution · CI</span>
+      </div>
+
+      <p class="small" style="margin-bottom: 10px;">
+        输入集中流动性区间、当前价格、日波动率和时间长度，使用几何布朗运动对未来价格做
+        Monte Carlo 模拟，估算期望 IL、分布和置信区间。
+      </p>
+
+      <!-- 输入区域 -->
+      <div class="stat-grid" style="margin-bottom: 8px;">
+        <div class="stat">
+          <div class="stat-label">Price lower bound</div>
+          <input
+            id="ilLower"
+            type="number"
+            step="0.0001"
+            placeholder="例如 100"
+            value="100"
+          />
+        </div>
+        <div class="stat">
+          <div class="stat-label">Price upper bound</div>
+          <input
+            id="ilUpper"
+            type="number"
+            step="0.0001"
+            placeholder="例如 200"
+            value="200"
+          />
+        </div>
+        <div class="stat">
+          <div class="stat-label">Current price (P₀)</div>
+          <input
+            id="ilP0"
+            type="number"
+            step="0.0001"
+            placeholder="例如 130"
+            value="130"
+          />
+        </div>
+      </div>
+
+      <div class="stat-grid" style="margin-bottom: 4px;">
+        <div class="stat">
+          <div class="stat-label">Daily volatility σ (percent)</div>
+          <input
+            id="ilSigmaDaily"
+            type="number"
+            step="0.01"
+            placeholder="例如 7.26 表示 7.26%"
+            value="7.26"
+          />
+        </div>
+        <div class="stat">
+          <div class="stat-label">simulation days</div>
+          <input
+            id="ilDays"
+            type="number"
+            step="1"
+            min="1"
+            placeholder="预测天数，例如 30"
+            value="30"
+          />
+        </div>
+        <div class="stat">
+          <div class="stat-label">Number of paths</div>
+          <input
+            id="ilPaths"
+            type="number"
+            step="100"
+            min="100"
+            placeholder="模拟次数，默认 1000"
+            value="1000"
+          />
+        </div>
+      </div>
+
+      <div style="margin-top: 6px; margin-bottom: 4px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+        <button id="runIlBtn" class="run-simulation-btn">
+          <span class="play-icon">▶</span>
+          Run Simulation
+        </button>
+        <span class="small" id="ilStatus"></span>
+      </div>
+      <div class="error" id="ilError"></div>
+
+      <!-- 输出概览 -->
+      <div style="margin-top: 12px;">
+        <div class="muted-label" style="margin-bottom: 4px;">Simulation results</div>
+        <div class="stat-grid">
+          <div class="stat">
+            <div class="stat-label">Expected IL</div>
+            <div class="stat-value" id="ilExpected">–</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Equivalent IL APR</div>
+            <div class="stat-value" id="ilApr">–</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Fee Break-even APR</div>
+            <div class="stat-value" id="ilFeeBreakEven">–</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">5% – 95% IL interval</div>
+            <div class="stat-value" id="ilCI">–</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Std. deviation of IL</div>
+            <div class="stat-value" id="ilStd">–</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 分布图 -->
+      <div class="chart-container" style="margin-top: 12px;">
+        <div class="muted-label">IL distribution (percent)</div>
+        <div class="small">
+          以 Monte Carlo 模拟得到的 IL 样本为基础，将结果分箱绘制成频数直方图。
+        </div>
+        <div class="chart-wrapper" style="margin-top: 10px;">
+          <canvas id="ilDistributionChart"></canvas>
+        </div>
+        <div class="chart-legend" style="margin-top: 6px;">
+          <div class="chart-legend-item">
+            <span class="legend-dot" style="background: rgba(148,163,184,0.9);"></span>
+            <span>Frequency of simulated IL</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const API_BASE = "https://api.geckoterminal.com/api/v2";
+    const BIRDEYE_BASE = "https://public-api.birdeye.so";
+
+    function toggleCollapsible(sectionId) {
+      const section = document.getElementById(sectionId);
+      const arrow = document.getElementById(sectionId.replace('Section', 'Arrow'));
+      if (section && arrow) {
+        const isExpanded = section.style.display !== 'none';
+        section.style.display = isExpanded ? 'none' : 'block';
+        arrow.textContent = isExpanded ? '▶' : '▼';
+      }
+    }
+
+    // 格式化数字为12位有效数字
+    function toSignificantDigits(num, digits = 12) {
+      // 确保输入是数字类型
+      if (typeof num !== 'number') {
+        num = Number(num);
+      }
+      
+      if (!Number.isFinite(num)) {
+        return String(num);
+      }
+      
+      if (num === 0) {
+        return "0";
+      }
+      
+      // 使用 toPrecision 来确保指定位数的有效数字
+      const formatted = num.toPrecision(digits);
+      
+      // 如果结果包含科学计数法（e 或 E），直接返回
+      if (formatted.includes('e') || formatted.includes('E')) {
+        return formatted;
+      }
+      
+      // 移除末尾不必要的零
+      // 例如：139.387752996000 -> 139.387752996
+      // 但要注意：parseFloat 可能会丢失一些精度，所以我们需要小心处理
+      const parsed = parseFloat(formatted);
+      const parsedStr = parsed.toString();
+      
+      // 如果解析后的字符串长度合理，使用它（更简洁）
+      // 否则使用原始 toPrecision 的结果
+      if (parsedStr.length <= formatted.length + 2) {
+        return parsedStr;
+      }
+      
+      return formatted;
+    }
+
+    function getBirdeyeApiKey() {
+      const el = document.getElementById("birdeyeApiKey");
+      const fallback = "2412d6b52e4b4d9095f9a5991ea8196c";
+      if (!el) return fallback;
+      const v = (el.value || "").trim();
+      return v || fallback;
+    }
+
+    let currentDays = 30; // 当前选择的天数（由滑杆控制），默认 30 天
+    let tvlVolumeChartInstance = null;
+    let storedOhlcvData = []; // 存储完整的180天数据
+
+    async function fetchOhlcv(poolId, days) {
+      const limit = days ?? currentDays;
+      const url = `${API_BASE}/networks/solana/pools/${poolId}/ohlcv/day?aggregate=1&limit=${limit}&currency=usd&token=base`;
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        throw new Error(`OHLCV HTTP error ${resp.status} (${resp.statusText})`);
+      }
+      const json = await resp.json();
+      const list = json?.data?.attributes?.ohlcv_list || [];
+      return list;
+    }
+
+    async function fetchBirdeyeOhlcv(poolId, days) {
+      const nowSec = Math.floor(Date.now() / 1000);
+      const lookbackDays = days ?? currentDays;
+      // 多留 1 天 buffer
+      const fromSec = nowSec - (lookbackDays + 1) * 24 * 60 * 60;
+
+      const url = `${BIRDEYE_BASE}/defi/ohlcv/pair?address=${poolId}&type=1D&time_from=${fromSec}&time_to=${nowSec}`;
+      const headers = {
+        "accept": "application/json",
+        "x-chain": "solana",
+        "X-API-KEY": getBirdeyeApiKey()
+      };
+
+      const resp = await fetch(url, { headers });
+      if (!resp.ok) {
+        throw new Error(`Birdeye OHLCV HTTP error ${resp.status} (${resp.statusText})`);
+      }
+      const json = await resp.json();
+
+      // 显示 Birdeye 原始响应（如果对应的容器已存在）
+      const birdeyeRawEl = document.getElementById("birdeyeRawJson");
+      if (birdeyeRawEl) {
+        birdeyeRawEl.textContent = JSON.stringify(json, null, 2);
+      }
+
+      const data = json && json.data ? json.data : null;
+
+      const rawItems =
+        (data && (data.items || data.ohlcv_list || data.ohlcv || data.candles)) ||
+        (Array.isArray(data) ? data : []) ||
+        [];
+
+      const normalized = rawItems
+        .map((item) => {
+          if (Array.isArray(item)) {
+            const ts = Number(item[0] ?? 0);
+            const open = Number(item[1] ?? 0);
+            const high = Number(item[2] ?? open);
+            const low = Number(item[3] ?? open);
+            const close = Number(item[4] ?? open);
+            const volume = Number(item[5] ?? 0);
+            // 尝试从第 7/8 列读取 TVL（如果有）
+            const tvlCandidate = Number(item[6] ?? item[7] ?? 0);
+            const tvl = Number.isFinite(tvlCandidate) && tvlCandidate > 0 ? tvlCandidate : null;
+            // 尝试从后续列读取交易笔数（如果有）
+            const tradesCandidate = Number(item[8] ?? item[9] ?? 0);
+            const trades =
+              Number.isFinite(tradesCandidate) && tradesCandidate >= 0 ? tradesCandidate : 0;
+            return [ts, open, high, low, close, volume, tvl, trades];
+          } else if (item && typeof item === "object") {
+            const ts = Number(item.unixTime ?? item.time ?? item.t ?? 0);
+            const open = Number(item.open ?? item.o ?? 0);
+            const high = Number(item.high ?? item.h ?? open);
+            const low = Number(item.low ?? item.l ?? open);
+            const close = Number(item.close ?? item.c ?? open);
+            const volume = Number(item.volume ?? item.v ?? 0);
+            // 常见的 TVL 字段名尝试
+            const tvlCandidate = Number(
+              item.tvl ?? item.tvlUsd ?? item.tvl_usd ??
+              item.liquidity ?? item.liquidityUsd ?? item.liquidity_usd ?? 0
+            );
+            const tvl = Number.isFinite(tvlCandidate) && tvlCandidate > 0 ? tvlCandidate : null;
+            // 常见的交易笔数字段名尝试
+            const tradesCandidate = Number(
+              item.n ?? item.txCount ?? item.trades ?? item.tradeCount ?? 0
+            );
+            const trades =
+              Number.isFinite(tradesCandidate) && tradesCandidate >= 0 ? tradesCandidate : 0;
+            return [ts, open, high, low, close, volume, tvl, trades];
+          }
+          return null;
+        })
+        .filter((row) => Array.isArray(row) && row[0]);
+
+      // 根据滑杆对应的天数补齐每天一条（没有数据的天用占位）
+      const daysCount = lookbackDays;
+      const endDay = Math.floor(nowSec / 86400) * 86400; // 当天 00:00
+      const startDay = endDay - (daysCount - 1) * 86400;
+
+      // 先按“天”归一化键值
+      const byDay = new Map();
+      normalized.forEach((row) => {
+        const ts = row[0];
+        const dayTs = Math.floor(ts / 86400) * 86400;
+        // 最新的一条覆盖旧的（如果同一天多条）
+        byDay.set(dayTs, row);
+      });
+
+      const padded = [];
+      for (let t = startDay; t <= endDay; t += 86400) {
+        if (byDay.has(t)) {
+          padded.push(byDay.get(t));
+        } else {
+          // 没有数据的天，用占位：价格为 null，成交量 0，TVL null，交易笔数 0
+          padded.push([t, null, null, null, null, 0, null, 0]);
+        }
+      }
+
+      return padded;
+    }
+
+    async function checkBirdeyeKey() {
+      const statusEl = document.getElementById("birdeyeStatus");
+      if (!statusEl) return;
+
+      const key = getBirdeyeApiKey();
+      if (!key) {
+        statusEl.textContent = "Birdeye API Key 为空。";
+        statusEl.style.color = "var(--danger)";
+        return;
+      }
+
+      statusEl.textContent = "Checking Birdeye API Key...";
+      statusEl.style.color = "var(--text-muted)";
+
+      // 使用当前的 poolId（或默认的）测试一下是否能正常获取到数据
+      const poolInput = document.getElementById("poolId");
+      const fallbackPoolId = "DJNtGuBGEQiUCWE8F981M2C3ZghZt2XLD8f2sQdZ6rsZ";
+      const testPoolId =
+        (poolInput && (poolInput.value || "").trim()) || fallbackPoolId;
+
+      try {
+        const list = await fetchBirdeyeOhlcv(testPoolId, 1);
+        if (Array.isArray(list) && list.length > 0) {
+          statusEl.textContent = "Birdeye API Key 可用。";
+          statusEl.style.color = "var(--accent)";
+        } else {
+          statusEl.textContent =
+            "Birdeye API Key 请求成功但没有返回数据，可能是权限或测试池子的问题。";
+          statusEl.style.color = "var(--text-muted)";
+        }
+      } catch (e) {
+        console.error("Birdeye key check failed", e);
+        const msg = e && e.message ? e.message : String(e);
+        statusEl.textContent = `Birdeye API Key 不可用：${msg}`;
+        statusEl.style.color = "var(--danger)";
+      }
+    }
+
+    function buildTvlVolumeChart(
+      ctx,
+      labels,
+      tvlData,
+      volData,
+      hasTvl,
+      _openData = [],      // 已不再使用 open/close，仅保留 high/low
+      highData = [],
+      lowData = [],
+      _closeData = [],
+      hasPrice = false,
+      tradesData = [],
+      hasTrades = false
+    ) {
+      if (tvlVolumeChartInstance) {
+        tvlVolumeChartInstance.destroy();
+      }
+
+      const datasets = [];
+
+      if (hasTvl) {
+        datasets.push({
+          type: "line",
+          label: "TVL (USD)",
+          data: tvlData,
+          borderColor: "#22c55e",
+          backgroundColor: "rgba(34, 197, 94, 0.15)",
+          borderWidth: 2,
+          tension: 0.3,
+          yAxisID: "y",
+          pointRadius: 2.5,
+          pointHoverRadius: 4
+        });
+      }
+
+      if (hasPrice) {
+        datasets.push(
+          {
+            type: "line",
+            label: "High",
+            data: highData,
+            borderColor: "rgba(250, 204, 21, 0.9)",
+            backgroundColor: "rgba(250, 204, 21, 0.12)",
+            borderWidth: 1.5,
+            tension: 0.25,
+            yAxisID: "y",
+            pointRadius: 0,
+            pointHoverRadius: 2.5
+          },
+          {
+            type: "line",
+            label: "Low",
+            data: lowData,
+            borderColor: "rgba(248, 113, 113, 0.9)",
+            backgroundColor: "rgba(248, 113, 113, 0.12)",
+            borderWidth: 1.5,
+            tension: 0.25,
+            yAxisID: "y",
+            pointRadius: 0,
+            pointHoverRadius: 2.5
+          }
+        );
+      }
+
+      if (hasTrades) {
+        datasets.push({
+          type: "line",
+          label: "Trades Count",
+          data: tradesData,
+          borderColor: "rgba(244, 114, 182, 0.9)", // pink
+          backgroundColor: "rgba(244, 114, 182, 0.15)",
+          borderWidth: 1.8,
+          tension: 0.3,
+          yAxisID: "y1",
+          pointRadius: 0,
+          pointHoverRadius: 3
+        });
+      }
+
+      datasets.push({
+        type: "bar",
+        label: "Volume (USD)",
+        data: volData,
+        backgroundColor: "rgba(148, 163, 184, 0.65)",
+        borderColor: "rgba(148, 163, 184, 0.9)",
+        borderWidth: 1,
+        yAxisID: "y1",
+        maxBarThickness: 18
+      });
+
+      tvlVolumeChartInstance = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels,
+          datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              mode: "index",
+              intersect: false,
+              backgroundColor: "rgba(15, 23, 42, 0.95)",
+              borderColor: "rgba(148, 163, 184, 0.5)",
+              borderWidth: 1,
+              padding: 10,
+              titleFont: {
+                size: 12
+              },
+              bodyFont: {
+                size: 11
+              },
+              callbacks: {
+                label: function (ctx) {
+                  const label = ctx.dataset.label || "";
+                  const value = ctx.parsed.y;
+                  if (value == null) return "";
+                  const formatted =
+                    Math.abs(value) >= 1e9
+                      ? (value / 1e9).toFixed(2) + "B"
+                      : Math.abs(value) >= 1e6
+                      ? (value / 1e6).toFixed(2) + "M"
+                      : Math.abs(value) >= 1e3
+                      ? (value / 1e3).toFixed(2) + "K"
+                      : value.toFixed(2);
+                  return `${label}: ${formatted} USD`;
+                }
+              }
+            }
+          },
+          interaction: {
+            mode: "index",
+            intersect: false
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: "rgba(148, 163, 184, 0.9)",
+                font: {
+                  size: 11
+                }
+              },
+              grid: {
+                display: false
+              }
+            },
+            y: {
+              position: "left",
+              ticks: {
+                color: "rgba(34, 197, 94, 0.9)",
+                font: {
+                  size: 10
+                },
+                callback: function (value) {
+                  if (Math.abs(value) >= 1e9) return (value / 1e9).toFixed(1) + "B";
+                  if (Math.abs(value) >= 1e6) return (value / 1e6).toFixed(1) + "M";
+                  if (Math.abs(value) >= 1e3) return (value / 1e3).toFixed(0) + "K";
+                  return value;
+                }
+              },
+              grid: {
+                color: "rgba(30, 64, 175, 0.25)"
+              }
+            },
+            y1: {
+              position: "right",
+              ticks: {
+                color: "rgba(148, 163, 184, 0.9)",
+                font: {
+                  size: 10
+                },
+                callback: function (value) {
+                  if (Math.abs(value) >= 1e9) return (value / 1e9).toFixed(1) + "B";
+                  if (Math.abs(value) >= 1e6) return (value / 1e6).toFixed(1) + "M";
+                  if (Math.abs(value) >= 1e3) return (value / 1e3).toFixed(0) + "K";
+                  return value;
+                }
+              },
+              grid: {
+                display: false
+              }
+            }
+          }
+        }
+      });
+
+      // 控制图例中 TVL 是否显示
+      const tvlLegendEl = document.getElementById("tvlLegend");
+      if (tvlLegendEl) {
+        tvlLegendEl.style.display = hasTvl ? "inline-flex" : "none";
+      }
+    }
+
+    function updateChartFromStoredData(days) {
+      if (!storedOhlcvData || storedOhlcvData.length === 0) {
+        // 如果没有存储的数据，清空图表
+        const ctx = document.getElementById("tvlVolumeChart").getContext("2d");
+        buildTvlVolumeChart(ctx, [], [], [], false, [], [], [], [], false, [], false);
+        return;
+      }
+
+      // 从存储的数据中取最后 N 天的数据
+      const displayDays = days || currentDays;
+      const startIndex = Math.max(0, storedOhlcvData.length - displayDays);
+      const displayData = storedOhlcvData.slice(startIndex);
+
+      const labels = [];
+      const tvlData = [];
+      const volData = [];
+      const highData = [];
+      const lowData = [];
+      const tradesData = [];
+      let hasTvl = false;
+      let hasPrice = false;
+      let hasTrades = false;
+
+      displayData.forEach(entry => {
+        const ts = entry[0];       // timestamp in seconds
+        const _open = entry[1]; // 不再单独绘制 open/close，仅用于判断是否有价格
+        const high = entry[2];
+        const low = entry[3];
+        const _close = entry[4];
+        const volume = entry[5];   // volume in USD (with currency=usd)
+        const tvl = entry[6];      // 尝试从第 7 项读取 TVL（如果有）
+        const trades = entry[7];   // 每日交易笔数（如果有）
+        const date = new Date(ts * 1000);
+        const label = date.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric"
+        });
+
+        labels.push(label);
+
+        // 高低价
+        if (high != null && !isNaN(Number(high))) {
+          highData.push(Number(high));
+          hasPrice = true;
+        } else {
+          highData.push(null);
+        }
+
+        if (low != null && !isNaN(Number(low))) {
+          lowData.push(Number(low));
+          hasPrice = true;
+        } else {
+          lowData.push(null);
+        }
+
+        // TVL
+        if (tvl != null && !isNaN(Number(tvl)) && Number(tvl) > 0) {
+          tvlData.push(Number(tvl));
+          hasTvl = true;
+        } else {
+          tvlData.push(null);
+        }
+
+        // 交易笔数（Count）
+        if (trades != null && !isNaN(Number(trades))) {
+          const n = Number(trades);
+          tradesData.push(n);
+          if (n > 0) {
+            hasTrades = true;
+          }
+        } else {
+          tradesData.push(0);
+        }
+
+        volData.push(volume);
+      });
+
+      const ctx = document.getElementById("tvlVolumeChart").getContext("2d");
+      buildTvlVolumeChart(
+        ctx,
+        labels,
+        tvlData,
+        volData,
+        hasTvl,
+        [],        // openData 不再使用
+        highData,
+        lowData,
+        [],        // closeData 不再使用
+        hasPrice,
+        tradesData,
+        hasTrades
+      );
+    }
+
+    async function loadPool(poolId, daysOverride) {
+      const errorEl = document.getElementById("error");
+      const loadingEl = document.getElementById("loading");
+      const resultsEl = document.getElementById("results");
+      const infoEl = document.getElementById("poolInfo");
+      const rawEl = document.getElementById("rawJson");
+      const birdeyeRawEl = document.getElementById("birdeyeRawJson");
+
+      errorEl.textContent = "";
+      loadingEl.textContent = "Loading from GeckoTerminal API...";
+      resultsEl.style.display = "none";
+      infoEl.innerHTML = "";
+      rawEl.textContent = "";
+      if (birdeyeRawEl) birdeyeRawEl.textContent = "";
+
+      try {
+        if (!poolId || poolId.trim() === "") {
+          throw new Error("Please input a pool id (Solana pool address).");
+        }
+
+        const cleanId = poolId.trim();
+
+        // 1, current pool snapshot
+        const url = `${API_BASE}/networks/solana/pools/${cleanId}`;
+        const resp = await fetch(url);
+        if (!resp.ok) {
+          throw new Error(`HTTP error ${resp.status} (${resp.statusText})`);
+        }
+        const json = await resp.json();
+
+        rawEl.textContent = JSON.stringify(json, null, 2);
+
+        const data = json.data;
+        if (!data || !data.attributes) {
+          throw new Error("Unexpected API format, no data.attributes field.");
+        }
+
+        const attr = data.attributes;
+
+        // 获取代币名称，尝试多个可能的字段
+        let baseSymbol = attr.base_token_symbol || 
+                        attr.base_token?.symbol ||
+                        attr.base?.symbol ||
+                        attr.token0?.symbol ||
+                        (data.relationships?.base_token?.data?.attributes?.symbol) ||
+                        (data.relationships?.base_token?.data?.symbol) ||
+                        "N/A";
+        
+        let quoteSymbol = attr.quote_token_symbol || 
+                         attr.quote_token?.symbol ||
+                         attr.quote?.symbol ||
+                         attr.token1?.symbol ||
+                         (data.relationships?.quote_token?.data?.attributes?.symbol) ||
+                         (data.relationships?.quote_token?.data?.symbol) ||
+                         "N/A";
+        
+        // 如果还是 N/A，尝试从 included 数组中查找（GeckoTerminal API 通常包含这个）
+        if ((baseSymbol === "N/A" || quoteSymbol === "N/A") && json.included && Array.isArray(json.included)) {
+          const tokens = json.included.filter(item => item.type === 'token' && item.attributes?.symbol);
+          
+          // 尝试通过 relationships 找到对应的 token
+          if (data.relationships) {
+            const baseTokenId = data.relationships?.base_token?.data?.id || 
+                               data.relationships?.base_token?.data?.data?.id;
+            const quoteTokenId = data.relationships?.quote_token?.data?.id || 
+                                data.relationships?.quote_token?.data?.data?.id;
+            
+            if (baseTokenId && baseSymbol === "N/A") {
+              const baseToken = tokens.find(t => t.id === baseTokenId);
+              if (baseToken?.attributes?.symbol) {
+                baseSymbol = baseToken.attributes.symbol;
+              }
+            }
+            
+            if (quoteTokenId && quoteSymbol === "N/A") {
+              const quoteToken = tokens.find(t => t.id === quoteTokenId);
+              if (quoteToken?.attributes?.symbol) {
+                quoteSymbol = quoteToken.attributes.symbol;
+              }
+            }
+          }
+          
+          // 如果还是找不到，尝试按顺序取前两个 token
+          if (tokens.length >= 2) {
+            if (baseSymbol === "N/A" && tokens[0]?.attributes?.symbol) {
+              baseSymbol = tokens[0].attributes.symbol;
+            }
+            if (quoteSymbol === "N/A" && tokens[1]?.attributes?.symbol) {
+              quoteSymbol = tokens[1].attributes.symbol;
+            }
+          } else if (tokens.length === 1 && baseSymbol === "N/A") {
+            baseSymbol = tokens[0].attributes.symbol;
+          }
+        }
+        
+        // 最后的备用方案：尝试从 name 字段解析（如果有格式如 "SOL/USDC"）
+        if ((baseSymbol === "N/A" || quoteSymbol === "N/A") && attr.name) {
+          const nameParts = attr.name.split('/');
+          if (nameParts.length >= 2) {
+            if (baseSymbol === "N/A") baseSymbol = nameParts[0].trim();
+            if (quoteSymbol === "N/A") quoteSymbol = nameParts[1].trim();
+          }
+        }
+        
+        // 调试：如果还是 N/A，输出警告
+        if (baseSymbol === "N/A" || quoteSymbol === "N/A") {
+          console.warn("Could not find token symbols. Available attributes:", Object.keys(attr));
+          console.warn("Relationships:", data.relationships);
+          console.warn("Included items:", json.included?.map(i => ({ type: i.type, id: i.id, symbol: i.attributes?.symbol })));
+        }
+        
+        // 获取 token0 (base token) 的 USD 价格
+        let token0PriceUsd = attr.base_token_price_usd || 
+                            attr.base_token?.price_usd ||
+                            attr.token0?.price_usd ||
+                            attr.price_in_usd ||
+                            null;
+        
+        // 获取 token1 (quote token) 的 USD 价格
+        let token1PriceUsd = attr.quote_token_price_usd || 
+                            attr.quote_token?.price_usd ||
+                            attr.token1?.price_usd ||
+                            null;
+        
+        // 获取 market_cap_usd（通常来自 base token）
+        let marketCapUsd = attr.base_token_market_cap_usd || 
+                          attr.base_token?.market_cap_usd ||
+                          attr.market_cap_usd ||
+                          null;
+        
+        // 如果还是找不到，尝试从 included 数组中查找
+        if ((!token0PriceUsd || !token1PriceUsd || !marketCapUsd) && json.included && Array.isArray(json.included)) {
+          const tokens = json.included.filter(item => item.type === 'token' && item.attributes);
+          
+          if (data.relationships) {
+            const baseTokenId = data.relationships?.base_token?.data?.id || 
+                               data.relationships?.base_token?.data?.data?.id;
+            const quoteTokenId = data.relationships?.quote_token?.data?.id || 
+                                data.relationships?.quote_token?.data?.data?.id;
+            
+            if (baseTokenId) {
+              const baseToken = tokens.find(t => t.id === baseTokenId);
+              if (baseToken?.attributes) {
+                if (!token0PriceUsd && baseToken.attributes.price_usd) {
+                  token0PriceUsd = baseToken.attributes.price_usd;
+                }
+                if (!marketCapUsd && baseToken.attributes.market_cap_usd) {
+                  marketCapUsd = baseToken.attributes.market_cap_usd;
+                }
+              }
+            }
+            
+            if (quoteTokenId && !token1PriceUsd) {
+              const quoteToken = tokens.find(t => t.id === quoteTokenId);
+              if (quoteToken?.attributes?.price_usd) {
+                token1PriceUsd = quoteToken.attributes.price_usd;
+              }
+            }
+          }
+          
+          // 如果还是找不到，尝试按顺序取前两个 token
+          if (tokens.length >= 2) {
+            if (!token0PriceUsd && tokens[0]?.attributes?.price_usd) {
+              token0PriceUsd = tokens[0].attributes.price_usd;
+            }
+            if (!token1PriceUsd && tokens[1]?.attributes?.price_usd) {
+              token1PriceUsd = tokens[1].attributes.price_usd;
+            }
+            if (!marketCapUsd && tokens[0]?.attributes?.market_cap_usd) {
+              marketCapUsd = tokens[0].attributes.market_cap_usd;
+            }
+          } else if (tokens.length === 1 && !marketCapUsd && tokens[0]?.attributes?.market_cap_usd) {
+            marketCapUsd = tokens[0].attributes.market_cap_usd;
+          }
+        }
+        
+        // 格式化 token0 价格为12位有效数字
+        let token0PriceDisplay = "N/A";
+        if (token0PriceUsd !== undefined && token0PriceUsd !== null && token0PriceUsd !== "N/A") {
+          const priceNum = typeof token0PriceUsd === "number" ? token0PriceUsd : Number(token0PriceUsd);
+          if (Number.isFinite(priceNum) && priceNum > 0) {
+            token0PriceDisplay = toSignificantDigits(priceNum, 12);
+          } else {
+            token0PriceDisplay = String(token0PriceUsd);
+          }
+        }
+        
+        // 格式化 token1 价格为12位有效数字
+        let token1PriceDisplay = "N/A";
+        if (token1PriceUsd !== undefined && token1PriceUsd !== null && token1PriceUsd !== "N/A") {
+          const priceNum = typeof token1PriceUsd === "number" ? token1PriceUsd : Number(token1PriceUsd);
+          if (Number.isFinite(priceNum) && priceNum > 0) {
+            token1PriceDisplay = toSignificantDigits(priceNum, 12);
+          } else {
+            token1PriceDisplay = String(token1PriceUsd);
+          }
+        }
+        
+        // 格式化 market_cap_usd
+        let marketCapUsdDisplay = "N/A";
+        if (marketCapUsd !== undefined && marketCapUsd !== null && marketCapUsd !== "N/A") {
+          const marketCapNum = typeof marketCapUsd === "number" ? marketCapUsd : Number(marketCapUsd);
+          if (Number.isFinite(marketCapNum) && marketCapNum > 0) {
+            // 格式化市值，使用 B/M/K 单位
+            if (Math.abs(marketCapNum) >= 1e9) {
+              marketCapUsdDisplay = (marketCapNum / 1e9).toFixed(2) + "B";
+            } else if (Math.abs(marketCapNum) >= 1e6) {
+              marketCapUsdDisplay = (marketCapNum / 1e6).toFixed(2) + "M";
+            } else if (Math.abs(marketCapNum) >= 1e3) {
+              marketCapUsdDisplay = (marketCapNum / 1e3).toFixed(2) + "K";
+            } else {
+              marketCapUsdDisplay = marketCapNum.toFixed(2);
+            }
+          } else {
+            marketCapUsdDisplay = String(marketCapUsd);
+          }
+        }
+        
+        // 计算 token1/token0 价格比率（通过储备量或 USD 价格）
+        let token1PerToken0 = null;
+        let token0PerToken1 = null;
+        
+        // 方法1: 从储备量计算
+        const baseReserve = attr.base_token_reserve || attr.reserve_base || 
+                           (attr.base_token && attr.base_token.reserve);
+        const quoteReserve = attr.quote_token_reserve || attr.reserve_quote || 
+                            (attr.quote_token && attr.quote_token.reserve);
+        
+        if (baseReserve && quoteReserve && Number(baseReserve) > 0) {
+          const baseDecimals = attr.base_token_decimals || 
+                              (attr.base_token && attr.base_token.decimals) || 9;
+          const quoteDecimals = attr.quote_token_decimals || 
+                               (attr.quote_token && attr.quote_token.decimals) || 6;
+          
+          const baseAmount = Number(baseReserve) / Math.pow(10, baseDecimals);
+          const quoteAmount = Number(quoteReserve) / Math.pow(10, quoteDecimals);
+          
+          if (baseAmount > 0) {
+            // token1/token0 = quoteAmount / baseAmount
+            token1PerToken0 = quoteAmount / baseAmount;
+            // token0/token1 = baseAmount / quoteAmount
+            token0PerToken1 = baseAmount / quoteAmount;
+          }
+        }
+        
+        // 方法2: 如果储备量计算失败，使用 USD 价格计算
+        if ((!token1PerToken0 || !Number.isFinite(token1PerToken0)) && 
+            token0PriceUsd && token1PriceUsd && 
+            Number.isFinite(Number(token0PriceUsd)) && Number.isFinite(Number(token1PriceUsd)) &&
+            Number(token0PriceUsd) > 0) {
+          const token0Usd = Number(token0PriceUsd);
+          const token1Usd = Number(token1PriceUsd);
+          // token1/token0 = (token1_usd / token0_usd)
+          token1PerToken0 = token1Usd / token0Usd;
+          token0PerToken1 = token0Usd / token1Usd;
+        }
+        
+        // 格式化价格比率
+        let token1PerToken0Display = "N/A";
+        let token0PerToken1Display = "N/A";
+        
+        if (token1PerToken0 && Number.isFinite(token1PerToken0) && token1PerToken0 > 0) {
+          token1PerToken0Display = toSignificantDigits(token1PerToken0, 12);
+        }
+        
+        if (token0PerToken1 && Number.isFinite(token0PerToken1) && token0PerToken1 > 0) {
+          token0PerToken1Display = toSignificantDigits(token0PerToken1, 12);
+        }
+        
+        const liquidityUsd = attr.reserve_in_usd || attr.liquidity_in_usd || "N/A";
+        const dexName = attr.dex_name || "PancakeSwap V3 (Solana)";
+        
+        // 显示最近一次拉取时间的时间戳
+        const lastUpdated = new Date().toISOString();
+
+        infoEl.innerHTML = `
+          <div class="stat-grid">
+            <div class="stat">
+              <div class="stat-label">DEX</div>
+              <div class="stat-value">${dexName}</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Pair</div>
+              <div class="stat-value">${baseSymbol} / ${quoteSymbol}</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Pool ID (LP ID)</div>
+              <div class="stat-value">${cleanId}</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">${baseSymbol} Price (USD)</div>
+              <div class="stat-value">
+                ${token0PriceDisplay} USD
+              </div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">${quoteSymbol} Price (USD)</div>
+              <div class="stat-value">
+                ${token1PriceDisplay} USD
+              </div>
+            </div>
+            <div class="stat clickable-stat" id="priceRatioStat" 
+                 data-ratio-type="token1-token0"
+                 data-base-symbol="${baseSymbol}"
+                 data-quote-symbol="${quoteSymbol}"
+                 data-token1-per-token0="${token1PerToken0Display}"
+                 data-token0-per-token1="${token0PerToken1Display}">
+              <div class="stat-label">
+                <span id="priceRatioLabel">${quoteSymbol} / ${baseSymbol}</span>
+                <span class="swap-icon" id="swapIcon">⇄</span>
+              </div>
+              <div class="stat-value" id="priceRatioValue">
+                1 ${quoteSymbol} = ${token1PerToken0Display} ${baseSymbol}
+              </div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Volume 7d (USD)</div>
+              <div class="stat-value" id="volume7dValue">计算中...</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Market Cap (USD)</div>
+              <div class="stat-value" id="marketCapUsdValue">${marketCapUsdDisplay}</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Estimated Fees Per Day (USD)</div>
+              <div class="stat-value" id="estimatedFeesPerDayValue">计算中...</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Last Updated</div>
+              <div class="stat-value">${lastUpdated}</div>
+            </div>
+          </div>
+        `;
+
+        // 使用传入的天数（如果有），否则用当前全局的天数
+        const days = daysOverride ?? currentDays;
+        currentDays = days;
+
+        // 更新标题里的天数和滑杆的位置
+        const daysLabelEl = document.getElementById("daysLabel");
+        const daysRangeEl = document.getElementById("daysRange");
+        if (daysLabelEl) daysLabelEl.textContent = days;
+        if (daysRangeEl && String(daysRangeEl.value) !== String(days)) {
+          daysRangeEl.value = days;
+        }
+
+        // 2, fetch ohlcv - 总是获取180天的数据并存储
+        loadingEl.textContent = "Loading 180 days of OHLCV data...";
+        let ohlcvList = [];
+        try {
+          ohlcvList = await fetchBirdeyeOhlcv(cleanId, 180);
+        } catch (e) {
+          console.error("Failed to load OHLCV from Birdeye, falling back to GeckoTerminal", e);
+          try {
+            ohlcvList = await fetchOhlcv(cleanId, 180);
+          } catch (inner) {
+            console.error("Failed to load OHLCV from GeckoTerminal as well", inner);
+          }
+        }
+
+        // 存储完整的180天数据
+        storedOhlcvData = ohlcvList.length > 0 
+          ? [...ohlcvList].sort((a, b) => a[0] - b[0]) 
+          : [];
+
+        // 计算最近7天的总成交量
+        let volume7d = "N/A";
+        if (storedOhlcvData.length > 0) {
+          // 取最后7天的数据
+          const last7Days = storedOhlcvData.slice(-7);
+          // 计算总成交量（volume在索引5）
+          const totalVolume = last7Days.reduce((sum, entry) => {
+            const vol = entry[5] || 0; // volume在索引5
+            return sum + (Number.isFinite(vol) ? Number(vol) : 0);
+          }, 0);
+          
+          if (totalVolume > 0) {
+            // 格式化显示
+            if (Math.abs(totalVolume) >= 1e9) {
+              volume7d = (totalVolume / 1e9).toFixed(2) + "B";
+            } else if (Math.abs(totalVolume) >= 1e6) {
+              volume7d = (totalVolume / 1e6).toFixed(2) + "M";
+            } else if (Math.abs(totalVolume) >= 1e3) {
+              volume7d = (totalVolume / 1e3).toFixed(2) + "K";
+            } else {
+              volume7d = totalVolume.toFixed(2);
+            }
+          } else {
+            volume7d = "0";
+          }
+        }
+        
+        // 更新7天成交量显示
+        const volume7dEl = document.getElementById("volume7dValue");
+        if (volume7dEl) {
+          volume7dEl.textContent = volume7d;
+        }
+
+        // 计算 Estimated Fees Per Day = (Volume 7d / 7) * 0.01%
+        let estimatedFeesPerDay = "N/A";
+        if (storedOhlcvData.length > 0) {
+          const last7Days = storedOhlcvData.slice(-7);
+          const totalVolume = last7Days.reduce((sum, entry) => {
+            const vol = entry[5] || 0;
+            return sum + (Number.isFinite(vol) ? Number(vol) : 0);
+          }, 0);
+          
+          if (totalVolume > 0) {
+            const dailyVolume = totalVolume / 7;
+            let feesPerDay = dailyVolume * 0.0001; // 0.01% = 0.0001
+            feesPerDay *= 2; // 双倍手续费
+            // 格式化显示
+            if (Math.abs(feesPerDay) >= 1e9) {
+              estimatedFeesPerDay = (feesPerDay / 1e9).toFixed(2) + "B";
+            } else if (Math.abs(feesPerDay) >= 1e6) {
+              estimatedFeesPerDay = (feesPerDay / 1e6).toFixed(2) + "M";
+            } else if (Math.abs(feesPerDay) >= 1e3) {
+              estimatedFeesPerDay = (feesPerDay / 1e3).toFixed(2) + "K";
+            } else {
+              estimatedFeesPerDay = feesPerDay.toFixed(2);
+            }
+          } else {
+            estimatedFeesPerDay = "0";
+          }
+        }
+        
+        // 更新 Estimated Fees Per Day 显示
+        const estimatedFeesEl = document.getElementById("estimatedFeesPerDayValue");
+        if (estimatedFeesEl) {
+          estimatedFeesEl.textContent = estimatedFeesPerDay;
+        }
+
+        // 使用存储的数据更新图表（显示当前选择的天数）
+        updateChartFromStoredData(days);
+
+        resultsEl.style.display = "block";
+        
+        // 设置价格比率切换功能
+        setupPriceRatioToggle();
+      } catch (e) {
+        console.error(e);
+        errorEl.textContent = e.message || String(e);
+      } finally {
+        loadingEl.textContent = "";
+      }
+    }
+
+    function setupPriceRatioToggle() {
+      const priceRatioStat = document.getElementById("priceRatioStat");
+      if (!priceRatioStat) return;
+      
+      // 使用 once: false 确保可以多次点击
+      priceRatioStat.onclick = function() {
+        const currentType = this.getAttribute("data-ratio-type");
+        const baseSymbol = this.getAttribute("data-base-symbol");
+        const quoteSymbol = this.getAttribute("data-quote-symbol");
+        const token1PerToken0 = this.getAttribute("data-token1-per-token0");
+        const token0PerToken1 = this.getAttribute("data-token0-per-token1");
+        
+        const labelEl = document.getElementById("priceRatioLabel");
+        const valueEl = document.getElementById("priceRatioValue");
+        
+        if (currentType === "token1-token0") {
+          // 切换到 token0/token1
+          this.setAttribute("data-ratio-type", "token0-token1");
+          if (labelEl) labelEl.textContent = `${baseSymbol} / ${quoteSymbol}`;
+          if (valueEl) valueEl.textContent = `1 ${baseSymbol} = ${token0PerToken1} ${quoteSymbol}`;
+        } else {
+          // 切换到 token1/token0
+          this.setAttribute("data-ratio-type", "token1-token0");
+          if (labelEl) labelEl.textContent = `${quoteSymbol} / ${baseSymbol}`;
+          if (valueEl) valueEl.textContent = `1 ${quoteSymbol} = ${token1PerToken0} ${baseSymbol}`;
+        }
+      };
+    }
+
+    document.getElementById("loadBtn").addEventListener("click", () => {
+      const poolId = document.getElementById("poolId").value;
+      loadPool(poolId, currentDays);
+    });
+
+    document.getElementById("poolId").addEventListener("keyup", (e) => {
+      if (e.key === "Enter") {
+        loadPool(e.target.value, currentDays);
+      }
+    });
+
+    const checkBirdeyeKeyBtn = document.getElementById("checkBirdeyeKeyBtn");
+    if (checkBirdeyeKeyBtn) {
+      checkBirdeyeKeyBtn.addEventListener("click", () => {
+        checkBirdeyeKey();
+      });
+    }
+
+    // 滑杆：实时更新天数，只更新图表显示，不重新加载数据
+    const daysRangeEl = document.getElementById("daysRange");
+    if (daysRangeEl) {
+      const updateChartFromSlider = () => {
+        const newDays = Number(daysRangeEl.value);
+        currentDays = newDays;
+
+        const daysLabelEl = document.getElementById("daysLabel");
+        if (daysLabelEl) {
+          daysLabelEl.textContent = newDays;
+        }
+
+        // 只更新图表，不重新加载数据
+        const resultsEl = document.getElementById("results");
+        if (resultsEl && resultsEl.style.display !== "none") {
+          updateChartFromStoredData(newDays);
+        }
+      };
+
+      daysRangeEl.addEventListener("input", updateChartFromSlider);
+      daysRangeEl.addEventListener("change", updateChartFromSlider);
+    }
+
+    window.addEventListener("load", () => {
+      const poolId = document.getElementById("poolId").value;
+      loadPool(poolId, currentDays);
+      // 初次加载时也检查一下默认的 Birdeye API Key 是否可用
+      checkBirdeyeKey();
+    });
+
+    // ========= Impermanent Loss Monte Carlo Simulator =========
+
+    let ilChartInstance = null;
+
+    function randnBoxMuller() {
+      let u = 0;
+      let v = 0;
+      while (u === 0) u = Math.random();
+      while (v === 0) v = Math.random();
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+
+    function uniswapV3XYForPrice(P, Pl, Pu, L) {
+      const sqrtP = Math.sqrt(P);
+      const sqrtPl = Math.sqrt(Pl);
+      const sqrtPu = Math.sqrt(Pu);
+
+      if (P <= Pl) {
+        const x = L * (1 / sqrtPl - 1 / sqrtPu);
+        return { x, y: 0 };
+      } else if (P >= Pu) {
+        const y = L * (sqrtPu - sqrtPl);
+        return { x: 0, y };
+      } else {
+        const x = L * (1 / sqrtP - 1 / sqrtPu);
+        const y = L * (sqrtP - sqrtPl);
+        return { x, y };
+      }
+    }
+
+    function buildIlDistributionChart(labels, counts) {
+      const ctx = document.getElementById("ilDistributionChart").getContext("2d");
+      if (ilChartInstance) {
+        ilChartInstance.destroy();
+      }
+
+      ilChartInstance = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Frequency",
+              data: counts,
+              backgroundColor: "rgba(148, 163, 184, 0.65)",
+              borderColor: "rgba(148, 163, 184, 0.95)",
+              borderWidth: 1,
+              maxBarThickness: 18
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: "rgba(15, 23, 42, 0.96)",
+              borderColor: "rgba(148, 163, 184, 0.6)",
+              borderWidth: 1,
+              padding: 8,
+              callbacks: {
+                label: (ctx) => {
+                  const label = ctx.label || "";
+                  const c = ctx.parsed.y;
+                  return `${label}: ${c}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: "rgba(148, 163, 184, 0.9)",
+                font: { size: 10 },
+                maxRotation: 0,
+                minRotation: 0
+              },
+              grid: { display: false }
+            },
+            y: {
+              ticks: {
+                color: "rgba(148, 163, 184, 0.9)",
+                font: { size: 10 },
+                precision: 0
+              },
+              grid: {
+                color: "rgba(30, 64, 175, 0.25)"
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function runIlSimulation() {
+      const lowerEl = document.getElementById("ilLower");
+      const upperEl = document.getElementById("ilUpper");
+      const p0El = document.getElementById("ilP0");
+      const sigmaDailyEl = document.getElementById("ilSigmaDaily");
+      const daysEl = document.getElementById("ilDays");
+      const pathsEl = document.getElementById("ilPaths");
+      const statusEl = document.getElementById("ilStatus");
+      const errorEl = document.getElementById("ilError");
+
+      const expectedEl = document.getElementById("ilExpected");
+      const ciEl = document.getElementById("ilCI");
+      const stdEl = document.getElementById("ilStd");
+      const aprEl = document.getElementById("ilApr");
+      const feeBreakEvenEl = document.getElementById("ilFeeBreakEven");
+
+      errorEl.textContent = "";
+      statusEl.textContent = "Running Monte Carlo simulation...";
+      expectedEl.textContent = "–";
+      ciEl.textContent = "–";
+      stdEl.textContent = "–";
+      if (aprEl) aprEl.textContent = "–";
+      if (feeBreakEvenEl) feeBreakEvenEl.textContent = "–";
+
+      const Pl = Number(lowerEl.value);
+      const Pu = Number(upperEl.value);
+      const P0 = Number(p0El.value);
+      const sigmaDailyPct = Number(sigmaDailyEl.value);
+      const days = Number(daysEl.value);
+      let paths = Number(pathsEl.value);
+
+      if (!Number.isFinite(Pl) || !Number.isFinite(Pu) || !Number.isFinite(P0)) {
+        errorEl.textContent = "请填写有效的价格，包含区间下界、上界和当前价格。";
+        statusEl.textContent = "";
+        return;
+      }
+      if (Pl <= 0 || Pu <= 0 || P0 <= 0) {
+        errorEl.textContent = "价格必须大于 0。";
+        statusEl.textContent = "";
+        return;
+      }
+      if (Pl >= Pu) {
+        errorEl.textContent = "区间下界必须小于上界。";
+        statusEl.textContent = "";
+        return;
+      }
+      if (!Number.isFinite(sigmaDailyPct) || sigmaDailyPct <= 0) {
+        errorEl.textContent = "请填写有效的日波动率（百分比）。";
+        statusEl.textContent = "";
+        return;
+      }
+      if (!Number.isFinite(days) || days <= 0) {
+        errorEl.textContent = "预测天数必须为正整数。";
+        statusEl.textContent = "";
+        return;
+      }
+      if (!Number.isFinite(paths) || paths < 100) {
+        paths = 1000;
+      }
+
+      const sigmaDaily = sigmaDailyPct / 100;
+      const T = days;
+
+      const L = 1;
+      const xy0 = uniswapV3XYForPrice(P0, Pl, Pu, L);
+      const x0 = xy0.x;
+      const y0 = xy0.y;
+
+      const ils = new Array(paths);
+
+      for (let i = 0; i < paths; i++) {
+        const z = randnBoxMuller();
+        const logPT =
+          Math.log(P0) +
+          (-0.5 * sigmaDaily * sigmaDaily) * T +
+          sigmaDaily * Math.sqrt(T) * z;
+        const PT = Math.exp(logPT);
+
+        const xyT = uniswapV3XYForPrice(PT, Pl, Pu, L);
+        const xT = xyT.x;
+        const yT = xyT.y;
+
+        const vHodl = x0 * PT + y0;
+        const vLp = xT * PT + yT;
+
+        const il = vLp / vHodl - 1;
+        ils[i] = il;
+      }
+
+      ils.sort((a, b) => a - b);
+
+      const n = ils.length;
+      const mean =
+        ils.reduce((acc, v) => acc + v, 0) / n;
+
+      let variance = 0;
+      for (let i = 0; i < n; i++) {
+        const d = ils[i] - mean;
+        variance += d * d;
+      }
+      variance = variance / Math.max(1, n - 1);
+      const std = Math.sqrt(variance);
+
+      const idx5 = Math.floor(0.05 * (n - 1));
+      const idx95 = Math.floor(0.95 * (n - 1));
+      const il5 = ils[idx5];
+      const il95 = ils[idx95];
+
+      const toPercent = (x) => (x * 100).toFixed(3) + " %";
+
+      expectedEl.textContent = toPercent(mean);
+      ciEl.textContent = `${toPercent(il5)}  ~  ${toPercent(il95)}`;
+      stdEl.textContent = toPercent(std);
+
+      // 计算等效 IL APR：将 IL 年化
+      // mean 是小数形式（例如 -0.025 表示 -2.5%）
+      // 等效 APR = (mean / days) * 365（小数形式，例如 -0.30417 表示 -30.417%）
+      const equivalentIlApr = (mean / days) * 365;
+      if (aprEl) {
+        aprEl.textContent = toPercent(equivalentIlApr);
+      }
+
+      // 计算手续费盈亏平衡线 APR：需要多少手续费 APR 才能抵消 IL 损失
+      // 手续费盈亏平衡线 = |等效 IL APR|
+      const feeBreakEvenApr = Math.abs(equivalentIlApr);
+      if (feeBreakEvenEl) {
+        feeBreakEvenEl.textContent = toPercent(feeBreakEvenApr);
+      }
+
+      const minIl = ils[0];
+      const maxIl = ils[n - 1];
+      let lo = minIl;
+      let hi = maxIl;
+      if (hi - lo < 1e-6) {
+        lo -= 0.0005;
+        hi += 0.0005;
+      }
+
+      const binCount = 30;
+      const binSize = (hi - lo) / binCount;
+      const counts = new Array(binCount).fill(0);
+      const labels = new Array(binCount);
+
+      for (let i = 0; i < binCount; i++) {
+        const mid = lo + (i + 0.5) * binSize;
+        labels[i] = (mid * 100).toFixed(2) + "%";
+      }
+
+      for (let i = 0; i < n; i++) {
+        let idx = Math.floor((ils[i] - lo) / binSize);
+        if (idx < 0) idx = 0;
+        if (idx >= binCount) idx = binCount - 1;
+        counts[idx] += 1;
+      }
+
+      buildIlDistributionChart(labels, counts);
+
+      statusEl.textContent = `Done. Simulated ${paths} paths over ${days} days (σ₍daily₎ = ${sigmaDailyPct}%).`;
+    }
+
+    const runIlBtn = document.getElementById("runIlBtn");
+    if (runIlBtn) {
+      runIlBtn.addEventListener("click", runIlSimulation);
+    }
+
+    // 初始情况下就运行模拟，使用默认参数
+    window.addEventListener("load", () => {
+      setTimeout(() => {
+        runIlSimulation();
+      }, 1000); // 延迟1秒确保DOM和图表库完全加载
+    });
+  </script>
+</body>
+</html>

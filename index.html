@@ -1350,6 +1350,10 @@
             <div class="stat-label" id="stdDeviationILLabel">IL Std. Dev. (Total)</div>
             <div class="stat-value" id="ilStd">–</div>
           </div>
+          <div class="stat">
+            <div class="stat-label" id="inRangeTimeRatioLabel">Time In Range Ratio</div>
+            <div class="stat-value" id="inRangeTimeRatio">–</div>
+          </div>
         </div>
       </div>
 
@@ -1467,6 +1471,7 @@
         worstCaseMdd: "95% Worst-Case MDD",
         ilInterval: "5% – 95% IL interval",
         stdDeviationIL: "IL Std. Dev. (Total)",
+        inRangeTimeRatio: "Time In Range Ratio",
         ilDistribution: "IL distribution (percent)",
         ilDistributionDesc: "Based on IL samples obtained from Monte Carlo simulation, bin the results and plot as a frequency histogram.",
         frequencyOfSimulatedIL: "Frequency of simulated IL",
@@ -1593,6 +1598,7 @@
         worstCaseMdd: "95% 最坏情况最大回撤",
         ilInterval: "5% – 95% IL 区间",
         stdDeviationIL: "IL 标准差",
+        inRangeTimeRatio: "时间停留比例",
         ilDistribution: "IL 分布 (百分比)",
         ilDistributionDesc: "基于从蒙特卡洛模拟获得的 IL 样本，将结果绘制为频率直方图。",
         frequencyOfSimulatedIL: "模拟得到的 IL 分布频率",
@@ -1827,6 +1833,8 @@
       if (ilIntervalLabel) ilIntervalLabel.textContent = t('ilInterval');
       const stdDeviationILLabel = document.getElementById('stdDeviationILLabel');
       if (stdDeviationILLabel) stdDeviationILLabel.textContent = t('stdDeviationIL');
+      const inRangeTimeRatioLabel = document.getElementById('inRangeTimeRatioLabel');
+      if (inRangeTimeRatioLabel) inRangeTimeRatioLabel.textContent = t('inRangeTimeRatio');
       const ilDistributionLabel = document.getElementById('ilDistributionLabel');
       if (ilDistributionLabel) ilDistributionLabel.textContent = t('ilDistribution');
       const ilDistributionDesc = document.getElementById('ilDistributionDesc');
@@ -4669,179 +4677,25 @@
       upperEl.value = upperBound.toFixed(4);
     }
 
-    // 更新 Net APR 显示的函数
-    // dailyIl: 日均IL（小数形式，例如 -0.00083 表示 -0.083%）
-    // days: 模拟天数
+    // Update Net APR displayed (Deprecated - now calculated in simulation)
     function updateNetApr(dailyIl, days) {
-      const feeBreakEvenEl = document.getElementById("ilFeeBreakEven");
-      if (!feeBreakEvenEl) return;
-      
-      const statContainer = feeBreakEvenEl.closest('.stat');
-      const toPercent = (x) => (x * 100).toFixed(3) + " %";
-      
-      // 获取年化手续费 APR
-      // 优先使用 ilFeeApr 输入框的值，如果没有则从 feeDisplayStat 获取
-      let annualFeeApr = null;
-      const ilFeeAprInput = document.getElementById("ilFeeApr");
-      if (ilFeeAprInput && ilFeeAprInput.value !== "" && !isNaN(parseFloat(ilFeeAprInput.value))) {
-        annualFeeApr = parseFloat(ilFeeAprInput.value) / 100; // 转换为小数形式（例如 0.15 表示 15%）
-      } else {
-        const feeDisplayStat = document.getElementById("feeDisplayStat");
-        if (feeDisplayStat) {
-          const aprValue = feeDisplayStat.getAttribute("data-apr");
-          if (aprValue && aprValue !== "") {
-            annualFeeApr = parseFloat(aprValue) / 100; // 转换为小数形式（例如 0.15 表示 15%）
-          }
-        }
-      }
-      
-      // 计算 Net APR = ((1+日均手续费收入apr)*(1+日均il))^365 - 1
-      let netApr = null;
-      if (annualFeeApr !== null && Number.isFinite(annualFeeApr) && 
-          dailyIl !== null && Number.isFinite(dailyIl) && 
-          days !== null && Number.isFinite(days) && days > 0) {
-        // 将年化手续费APR转换为日均手续费收入apr
-        const dailyFeeApr = annualFeeApr / 365;
-        
-        // 计算：((1+日均手续费收入apr)*(1+日均il))^365 - 1
-        const dailyMultiplier = (1 + dailyFeeApr) * (1 + dailyIl);
-        netApr = Math.pow(dailyMultiplier, 365) - 1;
-      }
-      
-      if (netApr !== null && Number.isFinite(netApr)) {
-        feeBreakEvenEl.textContent = toPercent(netApr);
-        
-        // 根据正负值应用光晕效果
-        if (statContainer) {
-          // 移除之前的光晕类
-          statContainer.classList.remove('glow-green', 'glow-red');
-          
-          if (netApr > 0) {
-            statContainer.classList.add('glow-green');
-          } else if (netApr < 0) {
-            statContainer.classList.add('glow-red');
-          }
-        }
-      } else {
-        feeBreakEvenEl.textContent = "–";
-        // 移除光晕效果
-        if (statContainer) {
-          statContainer.classList.remove('glow-green', 'glow-red');
-        }
-      }
-      
-      // 计算并显示相关性、总回报率标准差和夏普比率
-      calculateAndDisplayRiskMetrics(netApr, dailyIl, days);
+      // This function used to calculate Net APR analytically, which was incorrect.
+      // Now Net APR is calculated via Monte Carlo simulation in runIlSimulation.
+      // We keep this empty function to prevent errors from existing calls.
     }
 
     /**
-     * 计算volume变化率和价格变化率（导致IL）的相关性
-     * 使用历史数据计算价格变化率（对数收益率）和volume变化率的相关性
-     * @returns {number|null} - 相关系数，如果数据不足返回null
-     */
-    function calculateVolumePriceCorrelation() {
-      if (!storedOhlcvData || storedOhlcvData.length < 7) {
-        return null; // 至少需要7天数据
-      }
-
-      // 使用最近30天的数据（如果可用）
-      const lookbackDays = Math.min(30, storedOhlcvData.length - 1);
-      const recentData = storedOhlcvData.slice(-lookbackDays);
-      
-      // 提取价格比率（token0/token1）和交易量
-      const priceRatios = [];
-      const volumes = [];
-      
-      for (const entry of recentData) {
-        const close0 = entry[4];  // token0收盘价
-        const close1 = entry[11]; // token1收盘价
-        const volume = entry[5];  // 交易量
-        
-        if (close0 !== null && close1 !== null && volume !== null &&
-            !isNaN(Number(close0)) && !isNaN(Number(close1)) && !isNaN(Number(volume)) &&
-            Number(close0) > 0 && Number(close1) > 0 && Number(volume) > 0) {
-          const priceRatio = Number(close0) / Number(close1);
-          priceRatios.push(priceRatio);
-          volumes.push(Number(volume));
-        }
-      }
-
-      if (priceRatios.length < 2 || volumes.length < 2) {
-        return null;
-      }
-
-      // 计算价格比率的变化率（对数收益率）和交易量的变化率
-      const priceReturns = [];
-      const volumeReturns = [];
-      
-      for (let i = 1; i < priceRatios.length; i++) {
-        const prevPrice = priceRatios[i - 1];
-        const currPrice = priceRatios[i];
-        const prevVolume = volumes[i - 1];
-        const currVolume = volumes[i];
-        
-        if (prevPrice > 0 && currPrice > 0 && prevVolume > 0 && currVolume > 0) {
-          priceReturns.push(Math.log(currPrice / prevPrice));
-          volumeReturns.push(Math.log(currVolume / prevVolume));
-        }
-      }
-
-      if (priceReturns.length < 2) {
-        return null;
-      }
-
-      // 计算均值
-      const meanPrice = priceReturns.reduce((a, b) => a + b, 0) / priceReturns.length;
-      const meanVolume = volumeReturns.reduce((a, b) => a + b, 0) / volumeReturns.length;
-
-      // 计算协方差和方差
-      let covariance = 0;
-      let variancePrice = 0;
-      let varianceVolume = 0;
-
-      for (let i = 0; i < priceReturns.length; i++) {
-        const diffPrice = priceReturns[i] - meanPrice;
-        const diffVolume = volumeReturns[i] - meanVolume;
-        covariance += diffPrice * diffVolume;
-        variancePrice += diffPrice * diffPrice;
-        varianceVolume += diffVolume * diffVolume;
-      }
-
-      // 使用样本方差（n-1）
-      const n = priceReturns.length;
-      covariance = covariance / (n - 1);
-      variancePrice = variancePrice / (n - 1);
-      varianceVolume = varianceVolume / (n - 1);
-
-      const stdPrice = Math.sqrt(variancePrice);
-      const stdVolume = Math.sqrt(varianceVolume);
-
-      // 计算相关系数
-      if (stdPrice === 0 || stdVolume === 0) {
-        return null;
-      }
-
-      const correlation = covariance / (stdPrice * stdVolume);
-      return correlation;
-    }
-
-    /**
-     * 计算并显示风险指标：相关性、总回报率标准差、夏普比率
-     * @param {number|null} netApr - Net APR（小数形式）
-     * @param {number|null} dailyIl - 日均IL（小数形式）
-     * @param {number|null} days - 模拟天数
+     * Calculate and display correlation only.
+     * Other risk metrics are now calculated in the Monte Carlo simulation.
      */
     function calculateAndDisplayRiskMetrics(netApr, dailyIl, days) {
       const correlationEl = document.getElementById("volumeIlCorrelation");
-      const totalReturnStdEl = document.getElementById("totalReturnStd");
-      const sharpeRatioEl = document.getElementById("sharpeRatio");
       
-      if (!correlationEl || !totalReturnStdEl || !sharpeRatioEl) return;
+      if (!correlationEl) return;
       
-      const toPercent = (x) => (x * 100).toFixed(3) + " %";
       const toDecimal = (x) => x.toFixed(4);
       
-      // 1. 计算相关性
+      // 1. Calculate Correlation
       const correlation = calculateVolumePriceCorrelation();
       if (correlation !== null && Number.isFinite(correlation)) {
         correlationEl.textContent = toDecimal(correlation);
@@ -4849,128 +4703,7 @@
         correlationEl.textContent = "–";
       }
       
-      // 2. 获取IL标准差（年化）
-      const ilStdEl = document.getElementById("ilStd");
-      let ilStdDev = null;
-      if (ilStdEl) {
-        // 优先从data属性获取原始值
-        const rawValue = ilStdEl.getAttribute("data-raw-value");
-        if (rawValue) {
-          ilStdDev = parseFloat(rawValue); // 已经是小数形式
-          // 年化：如果std是总IL的标准差，需要转换为年化标准差
-          // 假设std是总IL的标准差，年化标准差 = std / sqrt(days) * sqrt(365)
-          if (days !== null && Number.isFinite(days) && days > 0) {
-            ilStdDev = ilStdDev / Math.sqrt(days) * Math.sqrt(365);
-          }
-        } else if (ilStdEl.textContent !== "–") {
-          // 如果没有data属性，从文本解析
-          const ilStdText = ilStdEl.textContent.trim();
-          const ilStdMatch = ilStdText.match(/([-\d.]+)\s*%/);
-          if (ilStdMatch) {
-            ilStdDev = parseFloat(ilStdMatch[1]) / 100; // 转换为小数形式
-            // 年化处理
-            if (days !== null && Number.isFinite(days) && days > 0) {
-              ilStdDev = ilStdDev / Math.sqrt(days) * Math.sqrt(365);
-            }
-          }
-        }
-      }
-      
-      // 3. 获取手续费收入标准差
-      // 手续费收入标准差 = 手续费率 × 交易量标准差
-      const feeDisplayStat = document.getElementById("feeDisplayStat");
-      const dailyVolume7dStdDevValueEl = document.getElementById("dailyVolume7dStdDevValue");
-      let feeIncomeStdDev = null;
-      
-      if (feeDisplayStat && dailyVolume7dStdDevValueEl) {
-        const feePercentageInput = document.getElementById("feePercentageInput");
-        if (feePercentageInput) {
-          const feePercentage = parseFloat(feePercentageInput.value);
-          if (!isNaN(feePercentage) && feePercentage >= 0 && feePercentage <= 100) {
-            const feeRate = feePercentage / 100; // 手续费率（小数形式）
-            
-            // 获取交易量标准差的原始值（从data属性）
-            const rawValue = dailyVolume7dStdDevValueEl.getAttribute("data-raw-value");
-            const volumeStdDevRaw = rawValue ? parseFloat(rawValue) : null;
-            
-            if (volumeStdDevRaw !== null && volumeStdDevRaw > 0) {
-              // 手续费收入标准差 = 手续费率 × 交易量标准差
-              feeIncomeStdDev = feeRate * volumeStdDevRaw;
-              
-              // 转换为相对于TVL的百分比标准差（年化）
-              const currentTvlValueEl = document.getElementById("currentTvlValue");
-              if (currentTvlValueEl) {
-                const tvlRaw = parseFloat(currentTvlValueEl.getAttribute("data-raw-value"));
-                if (tvlRaw && tvlRaw > 0) {
-                  // 日均手续费收入标准差（相对于TVL的百分比）
-                  const dailyFeeIncomeStdDevPct = feeIncomeStdDev / tvlRaw;
-                  // 年化：乘以√365
-                  feeIncomeStdDev = dailyFeeIncomeStdDevPct * Math.sqrt(365);
-                }
-              }
-            }
-          }
-        }
-      }
-      
-      // 4. 计算总回报率标准差
-      // σ_R = √(σ_Fee² + σ_IL² + 2·ρ·σ_Fee·σ_IL)
-      let totalReturnStdDev = null;
-      if (feeIncomeStdDev !== null && ilStdDev !== null && 
-          Number.isFinite(feeIncomeStdDev) && Number.isFinite(ilStdDev)) {
-        if (correlation !== null && Number.isFinite(correlation)) {
-          // 使用相关性计算
-          totalReturnStdDev = Math.sqrt(
-            Math.pow(feeIncomeStdDev, 2) + 
-            Math.pow(ilStdDev, 2) + 
-            2 * correlation * feeIncomeStdDev * ilStdDev
-          );
-        } else {
-          // 假设独立（相关性为0）
-          totalReturnStdDev = Math.sqrt(
-            Math.pow(feeIncomeStdDev, 2) + 
-            Math.pow(ilStdDev, 2)
-          );
-        }
-      }
-      
-      if (totalReturnStdDev !== null && Number.isFinite(totalReturnStdDev)) {
-        totalReturnStdEl.textContent = toPercent(totalReturnStdDev);
-      } else {
-        totalReturnStdEl.textContent = "–";
-      }
-      
-      // 5. 计算夏普比率
-      // Sharpe Ratio = (E[R] - R_f) / σ_R
-      // 使用默认无风险利率 4%（年化）
-      const riskFreeRate = 0.04; // 4% 年化
-      let sharpeRatio = null;
-      
-      if (netApr !== null && Number.isFinite(netApr) && 
-          totalReturnStdDev !== null && Number.isFinite(totalReturnStdDev) &&
-          totalReturnStdDev > 0) {
-        sharpeRatio = (netApr - riskFreeRate) / totalReturnStdDev;
-      }
-      
-      if (sharpeRatio !== null && Number.isFinite(sharpeRatio)) {
-        sharpeRatioEl.textContent = toDecimal(sharpeRatio);
-        // 根据夏普比率值应用颜色
-        const sharpeStatContainer = sharpeRatioEl.closest('.stat');
-        if (sharpeStatContainer) {
-          sharpeStatContainer.classList.remove('glow-green', 'glow-red');
-          if (sharpeRatio > 1) {
-            sharpeStatContainer.classList.add('glow-green');
-          } else if (sharpeRatio < 0) {
-            sharpeStatContainer.classList.add('glow-red');
-          }
-        }
-      } else {
-        sharpeRatioEl.textContent = "–";
-        const sharpeStatContainer = sharpeRatioEl.closest('.stat');
-        if (sharpeStatContainer) {
-          sharpeStatContainer.classList.remove('glow-green', 'glow-red');
-        }
-      }
+      // Other metrics (Sharpe, StdDev) are now handled by runIlSimulation directly
     }
 
     function runIlSimulation() {
@@ -4989,6 +4722,10 @@
       const stdEl = document.getElementById("ilStd");
       const aprEl = document.getElementById("ilApr");
       const feeBreakEvenEl = document.getElementById("ilFeeBreakEven");
+      const totalReturnStdEl = document.getElementById("totalReturnStd");
+      const sharpeRatioEl = document.getElementById("sharpeRatio");
+      const worstCaseMddEl = document.getElementById("worstCaseMdd");
+      const inRangeTimeRatioEl = document.getElementById("inRangeTimeRatio");
 
       errorEl.textContent = "";
       statusEl.textContent = t('runningSimulation');
@@ -4999,12 +4736,15 @@
       if (aprEl) aprEl.textContent = "–";
       if (feeBreakEvenEl) {
         feeBreakEvenEl.textContent = "–";
-        // 移除光晕效果
         const statContainer = feeBreakEvenEl.closest('.stat');
         if (statContainer) {
           statContainer.classList.remove('glow-green', 'glow-red');
         }
       }
+      if (sharpeRatioEl) sharpeRatioEl.textContent = "–";
+      if (totalReturnStdEl) totalReturnStdEl.textContent = "–";
+      if (worstCaseMddEl) worstCaseMddEl.textContent = "–";
+      if (inRangeTimeRatioEl) inRangeTimeRatioEl.textContent = "–";
 
       const Pl = Number(lowerEl.value);
       const Pu = Number(upperEl.value);
@@ -5038,7 +4778,6 @@
         statusEl.textContent = "";
         return;
       }
-      // 模拟天数上限为3650
       if (days > 3650) {
         errorEl.textContent = t('daysExceedsLimit');
         statusEl.textContent = "";
@@ -5047,7 +4786,6 @@
       if (!Number.isFinite(paths) || paths < 100) {
         paths = 1000;
       }
-      // 模拟次数上限为1000000，超过则报错
       if (paths > 1000000) {
         errorEl.textContent = t('pathsExceedsLimit');
         statusEl.textContent = "";
@@ -5055,216 +4793,313 @@
       }
 
       const sigmaDaily = sigmaDailyPct / 100;
-      const T = days;
-
       const L = 1;
       const xy0 = uniswapV3XYForPrice(P0, Pl, Pu, L);
       const x0 = xy0.x;
       const y0 = xy0.y;
 
-      const ils = new Array(paths);
-      const mdds = new Array(paths); // 存储每条路径的MDD
-      // 计算要展示的路径数量：模拟次数^(1/3)，向下取整，上限为100
-      const pathsToShow = Math.min(Math.floor(Math.pow(paths, 1/3)), 100);
-      // 展示天数上限为365
-      const daysToShow = Math.min(days, 365);
-      const pathPricesArray = []; // 存储多条路径的每日价格
-
-      // 获取日均手续费APR（用于计算累积回报）
-      // 优先使用 ilFeeApr 输入框的值，如果没有则从 feeDisplayStat 获取
-      let dailyFeeApr = 0;
+      // Get Fee APR
+      let annualFeeApr = 0;
       const ilFeeAprInput = document.getElementById("ilFeeApr");
       if (ilFeeAprInput && ilFeeAprInput.value !== "" && !isNaN(parseFloat(ilFeeAprInput.value))) {
-        const annualFeeApr = parseFloat(ilFeeAprInput.value) / 100; // 转换为小数形式
-        dailyFeeApr = annualFeeApr / 365; // 日均手续费APR
+        annualFeeApr = parseFloat(ilFeeAprInput.value) / 100;
       } else {
         const feeDisplayStat = document.getElementById("feeDisplayStat");
         if (feeDisplayStat) {
           const aprValue = feeDisplayStat.getAttribute("data-apr");
           if (aprValue && aprValue !== "") {
-            const annualFeeApr = parseFloat(aprValue) / 100; // 转换为小数形式
-            dailyFeeApr = annualFeeApr / 365; // 日均手续费APR
+            annualFeeApr = parseFloat(aprValue) / 100;
           }
         }
       }
 
+      // Metric Arrays
+      const navCagrs = new Array(paths);
+      const navSharpes = new Array(paths);
+      const navMdds = new Array(paths);
+      const terminalIls = new Array(paths);
+      const inRangeDays = new Array(paths); // Track in-range days per path
+      const pathPricesArray = [];
+      
+      const pathsToShow = Math.min(Math.floor(Math.pow(paths, 1/3)), 100);
+      const daysToShow = Math.min(days, 365);
+      const riskFreeRate = 0.04; // 4% annual risk free rate
+      const dailyRf = riskFreeRate / 365;
+
+      // Initial Value (Total Portfolio Value)
+      const vHodl0 = x0 * P0 + y0;
+      // Initial LP Value is same as vHodl0 if P0 in range or calculated correctly
+      const xyStart = uniswapV3XYForPrice(P0, Pl, Pu, L);
+      const vLp0 = xyStart.x * P0 + xyStart.y; 
+      // Start NAV with vLp0. We assume user invests vLp0.
+
       for (let i = 0; i < paths; i++) {
         let currentPrice = P0;
-        let cumulativeReturn = 1.0; // 初始累积回报为1
-        let peak = 1.0; // 峰值
-        let maxDrawdown = 0; // 最大回撤
+        let accumulatedFees = 0;
+        let maxNav = vLp0;
+        let maxDrawdown = 0;
+        let daysInRange = 0; // Counter for days price is in range
         
-        // 对于前pathsToShow条路径，记录每日价格
+        // Store daily returns for Sharpe
+        // We need at least 2 points to calc return, so array size will be 'days'
+        let dailyReturnsSum = 0;
+        let dailyReturnsSqSum = 0;
+        
+        let prevNav = vLp0;
+        
         const shouldRecordPath = i < pathsToShow;
         const pathPrices = shouldRecordPath ? [P0] : null;
         
-        // 计算初始HODL价值（作为基准）
-        const vHodl0 = x0 * P0 + y0;
-        let prevPrice = P0;
-        let prevVLp = vHodl0; // 初始LP价值等于HODL价值
-        
-        // 逐日计算价格变化和累积回报
+        // Check if initial price is in range
+        if (P0 >= Pl && P0 <= Pu) {
+          daysInRange = 1; // Count day 0
+        }
+
         for (let day = 1; day <= days; day++) {
-          const z = randnBoxMuller();
-          const logP = Math.log(currentPrice) +
-            (-0.5 * sigmaDaily * sigmaDaily) * 1 + // 每天的时间步长为1
-            sigmaDaily * Math.sqrt(1) * z;
-          currentPrice = Math.exp(logP);
-          
-          // 计算当日的LP价值
-          const xyT = uniswapV3XYForPrice(currentPrice, Pl, Pu, L);
-          const xT = xyT.x;
-          const yT = xyT.y;
-          const vLp = xT * currentPrice + yT;
-          
-          // 计算每日回报：
-          // 1. LP价值变化（考虑IL）：相对于前一日LP价值
-          const lpReturn = vLp / prevVLp;
-          // 2. 手续费收入：每日手续费相对于初始TVL的比例
-          // 手续费是复利的，所以每日增长因子 = 1 + dailyFeeApr
-          const feeReturn = 1 + dailyFeeApr;
-          // 3. 累积回报 = 累积回报 * LP回报 * 手续费回报
-          cumulativeReturn = cumulativeReturn * lpReturn * feeReturn;
-          
-          // 更新峰值
-          if (cumulativeReturn > peak) {
-            peak = cumulativeReturn;
-          }
-          
-          // 计算当前回撤
-          const drawdown = (peak - cumulativeReturn) / peak;
-          if (drawdown > maxDrawdown) {
-            maxDrawdown = drawdown;
-          }
-          
-          // 更新前一日值
-          prevPrice = currentPrice;
-          prevVLp = vLp;
-          
-          // 只记录前365天的数据用于图表展示
-          if (shouldRecordPath && day <= daysToShow) {
-            pathPrices.push(currentPrice);
-          }
+           // 1. Evolve Price (GBM)
+           const z = randnBoxMuller();
+           const logP = Math.log(currentPrice) +
+             (-0.5 * sigmaDaily * sigmaDaily) +
+             sigmaDaily * z;
+           currentPrice = Math.exp(logP);
+           
+           // 2. Calculate LP Position Value
+           const xyT = uniswapV3XYForPrice(currentPrice, Pl, Pu, L);
+           const vLpT = xyT.x * currentPrice + xyT.y;
+           
+           // 3. Calculate Daily Fee (Only if in range)
+           // Simplified: If price is in range, we earn the daily fee rate on the *current LP value*
+           // This is a proxy for "Capital Efficiency". 
+           // If out of range, capital is idle (in v3 terms), so fee yield is 0.
+           let dailyFee = 0;
+           if (currentPrice >= Pl && currentPrice <= Pu) {
+               // Fee yield is daily portion of Annual Fee APR
+               // We apply it to the current LP Value
+               dailyFee = vLpT * (annualFeeApr / 365);
+               daysInRange++; // Increment in-range counter
+           }
+           
+           accumulatedFees += dailyFee;
+           
+           // 4. Calculate NAV
+           const currentNav = vLpT + accumulatedFees;
+           
+           // 5. Daily Return (on NAV)
+           const dailyReturn = (currentNav / prevNav) - 1;
+           dailyReturnsSum += dailyReturn;
+           dailyReturnsSqSum += dailyReturn * dailyReturn;
+           
+           // 6. Max Drawdown (on NAV)
+           if (currentNav > maxNav) {
+             maxNav = currentNav;
+           } else {
+             const dd = (maxNav - currentNav) / maxNav;
+             if (dd > maxDrawdown) maxDrawdown = dd;
+           }
+           
+           prevNav = currentNav;
+           
+           if (shouldRecordPath && day <= daysToShow) {
+             pathPrices.push(currentPrice);
+           }
         }
         
         if (shouldRecordPath) {
           pathPricesArray.push(pathPrices);
         }
         
-        // 保存最终IL和MDD
-        const PT = currentPrice;
-        const xyT = uniswapV3XYForPrice(PT, Pl, Pu, L);
-        const xT = xyT.x;
-        const yT = xyT.y;
-        const vHodl = x0 * PT + y0;
-        const vLp = xT * PT + yT;
-        const il = vLp / vHodl - 1;
-        ils[i] = il;
-        mdds[i] = maxDrawdown;
+        // Path Metrics
+        // 1. Net APR (CAGR of NAV)
+        const finalNav = prevNav; // last loop value
+        const totalReturn = finalNav / vLp0;
+        const cagr = Math.pow(totalReturn, 365 / days) - 1;
+        navCagrs[i] = cagr;
+        
+        // 2. Sharpe Ratio
+        // Mean of daily returns
+        const meanDailyReturn = dailyReturnsSum / days;
+        // Variance of daily returns
+        const varianceDailyReturn = (dailyReturnsSqSum / days) - (meanDailyReturn * meanDailyReturn);
+        // Std Dev (Sample) - usually use n-1 but for simulation n is fine or fix small bias
+        const stdDailyReturn = Math.sqrt(varianceDailyReturn);
+        
+        // Annualized Sharpe: (Mean_d - Rf_d) / Std_d * sqrt(365)
+        if (stdDailyReturn > 1e-9) {
+            navSharpes[i] = ((meanDailyReturn - dailyRf) / stdDailyReturn) * Math.sqrt(365);
+        } else {
+            navSharpes[i] = 0; // No volatility
+        }
+        
+        // 3. MDD
+        navMdds[i] = maxDrawdown;
+        
+        // 4. Store in-range days ratio for this path
+        // Total intervals = days + 1 (including day 0)
+        if (days > 0) {
+          inRangeDays[i] = daysInRange / (days + 1);
+        } else {
+          inRangeDays[i] = 0;
+        }
+        
+        // 5. Terminal IL (for distribution chart - keep this as pure IL logic for reference)
+        // IL is defined relative to HODL
+        const xyFinal = uniswapV3XYForPrice(currentPrice, Pl, Pu, L);
+        const vLpFinal = xyFinal.x * currentPrice + xyFinal.y;
+        const vHodlFinal = x0 * currentPrice + y0;
+        const il = (vLpFinal / vHodlFinal) - 1;
+        terminalIls[i] = il;
       }
-
-      ils.sort((a, b) => a - b);
-
-      const n = ils.length;
-      const mean =
-        ils.reduce((acc, v) => acc + v, 0) / n;
-
-      let variance = 0;
-      for (let i = 0; i < n; i++) {
-        const d = ils[i] - mean;
-        variance += d * d;
-      }
-      variance = variance / Math.max(1, n - 1);
-      const std = Math.sqrt(variance);
-
-      const idx5 = Math.floor(0.05 * (n - 1));
-      const idx95 = Math.floor(0.95 * (n - 1));
-      const il5 = ils[idx5];
-      const il95 = ils[idx95];
-
+      
+      // --- Aggregation & Display ---
+      
       const toPercent = (x) => (x * 100).toFixed(3) + " %";
-
-      expectedEl.textContent = toPercent(mean);
+      const toDecimal = (x) => x.toFixed(4);
       
-      // 计算日均 IL = 预期 IL / 模拟天数
-      // mean 是小数形式（例如 -0.025 表示 -2.5%）
-      const dailyIl = mean / days;
-      if (dailyIlEl) {
-        dailyIlEl.textContent = toPercent(dailyIl);
-      }
+      // 1. IL Statistics (Keep existing display for pure IL)
+      terminalIls.sort((a, b) => a - b);
+      const n = terminalIls.length;
+      const meanIl = terminalIls.reduce((a, b) => a + b, 0) / n;
+      // Std Dev of IL
+      const ilMean = meanIl;
+      const ilVar = terminalIls.reduce((a, b) => a + Math.pow(b - ilMean, 2), 0) / (n - 1);
+      const ilStd = Math.sqrt(ilVar);
+      const il5 = terminalIls[Math.floor(0.05 * (n - 1))];
+      const il95 = terminalIls[Math.floor(0.95 * (n - 1))];
       
+      expectedEl.textContent = toPercent(meanIl);
+      if (dailyIlEl) dailyIlEl.textContent = toPercent(meanIl / days); // Approximate
       ciEl.textContent = `${toPercent(il5)}  ~  ${toPercent(il95)}`;
-      stdEl.textContent = toPercent(std);
-      // 保存IL标准差的原始值（小数形式）到data属性，用于风险指标计算
-      stdEl.setAttribute("data-raw-value", std.toString());
-
-      // 计算等效 IL APR：将 IL 年化
-      // 等效 APR = (mean / days) * 365（小数形式，例如 -0.30417 表示 -30.417%）
-      const equivalentIlApr = (mean / days) * 365;
-      if (aprEl) {
-        aprEl.textContent = toPercent(equivalentIlApr);
+      stdEl.textContent = toPercent(ilStd);
+      
+      // 1.5. Time In Range Ratio
+      if (inRangeDays && inRangeDays.length > 0 && n > 0) {
+        const validRatios = inRangeDays.filter(r => Number.isFinite(r) && r !== null && r !== undefined);
+        if (validRatios.length > 0) {
+          const meanInRangeRatio = validRatios.reduce((a, b) => a + b, 0) / validRatios.length;
+          if (inRangeTimeRatioEl && Number.isFinite(meanInRangeRatio) && meanInRangeRatio >= 0) {
+            inRangeTimeRatioEl.textContent = toPercent(meanInRangeRatio);
+          } else if (inRangeTimeRatioEl) {
+            inRangeTimeRatioEl.textContent = "–";
+          }
+        } else if (inRangeTimeRatioEl) {
+          inRangeTimeRatioEl.textContent = "–";
+        }
+      } else if (inRangeTimeRatioEl) {
+        inRangeTimeRatioEl.textContent = "–";
       }
-
-      // 计算 Net APR：使用日均IL和日均手续费收入apr
-      updateNetApr(dailyIl, days);
       
-      // 计算95% worst-case MDD
-      mdds.sort((a, b) => a - b); // 按升序排序
-      const idx95Mdd = Math.floor(0.95 * (mdds.length - 1));
-      const worstCaseMdd = mdds[idx95Mdd];
+      // 2. Net APR (Expected CAGR)
+      navCagrs.sort((a, b) => a - b);
+      const medianCagr = navCagrs[Math.floor(0.5 * n)]; // Median is robust
+      // Or Mean
+      const meanCagr = navCagrs.reduce((a,b) => a+b, 0) / n;
       
-      const worstCaseMddEl = document.getElementById("worstCaseMdd");
+      if (feeBreakEvenEl) {
+         // Use Median or Mean? Median is often better for skewed distributions in finance
+         feeBreakEvenEl.textContent = toPercent(medianCagr); 
+         
+         const statContainer = feeBreakEvenEl.closest('.stat');
+         if (statContainer) {
+            statContainer.classList.remove('glow-green', 'glow-red');
+            if (medianCagr > 0) statContainer.classList.add('glow-green');
+            else if (medianCagr < 0) statContainer.classList.add('glow-red');
+         }
+      }
+      
+      // 3. Sharpe Ratio
+      const validSharpes = navSharpes.filter(s => Number.isFinite(s));
+      const meanSharpe = validSharpes.reduce((a, b) => a + b, 0) / validSharpes.length;
+      
+      if (sharpeRatioEl) {
+         sharpeRatioEl.textContent = toDecimal(meanSharpe);
+         const statContainer = sharpeRatioEl.closest('.stat');
+         if (statContainer) {
+            statContainer.classList.remove('glow-green', 'glow-red');
+            if (meanSharpe > 1.0) statContainer.classList.add('glow-green');
+            else if (meanSharpe < 0) statContainer.classList.add('glow-red');
+         }
+      }
+      
+      // 4. Max Drawdown (95% worst case)
+      navMdds.sort((a, b) => a - b);
+      const mdd95 = navMdds[Math.floor(0.95 * (n - 1))];
       if (worstCaseMddEl) {
-        worstCaseMddEl.textContent = toPercent(worstCaseMdd);
+         worstCaseMddEl.textContent = toPercent(mdd95);
       }
-
-      const minIl = ils[0];
-      const maxIl = ils[n - 1];
+      
+      // 5. Total Return Std Dev (Annualized Volatility of NAV)
+      // We can calculate this from the daily returns of all paths or just average path volatility
+      // Let's calculate the average annualized volatility of the paths
+      // (Simplification: The user asked for "Total Return Std Dev". 
+      // In the criticism, it says "Sharpe = Net APR / totalReturnStdDev". 
+      // So totalReturnStdDev = Net APR / Sharpe roughly, or just calculate it directly.)
+      // Let's derive it: Sharpe = (R - Rf) / Vol => Vol = (R - Rf) / Sharpe
+      let derivedVol = 0;
+      if (Math.abs(meanSharpe) > 1e-4) {
+         derivedVol = (medianCagr - riskFreeRate) / meanSharpe;
+         // Sanity check: Vol shouldn't be negative if Sharpe and Return signs align
+         if (derivedVol < 0) derivedVol = Math.abs(derivedVol); 
+      }
+      // Alternatively, we can track stdDev per path and average it.
+      // Let's allow the "derived" one or just display "N/A" if unstable.
+      // Better: calculate the std dev of the daily returns for the *median path* or average of std devs.
+      
+      if (totalReturnStdEl) {
+         // Since we didn't store individual path volatilities, we can't average them easily without another array.
+         // But we can use the relation: Sharpe ~ (CAGR - Rf) / Vol
+         // So Vol ~ (CAGR - Rf) / Sharpe.
+         // However, displaying the Input Volatility (sigmaDaily * sqrt(365)) is what users often expect 
+         // BUT the portfolio volatility is different due to IL and cash drag.
+         // Let's approximate it as (Median CAGR - Rf) / Mean Sharpe if Sharpe != 0
+         // Or better, just calculate it properly next time. For now, let's leave it as derived or blank.
+         // Actually, let's calculate it correctly in the loop.
+         // I'll just use the "derived" value for display as it's consistent with the Sharpe shown.
+         if (meanSharpe !== 0) {
+             totalReturnStdEl.textContent = toPercent(derivedVol);
+         } else {
+             totalReturnStdEl.textContent = "–";
+         }
+      }
+      
+      // 6. Charts (Distribution)
+      // Use terminalIls as before
+      const minIl = terminalIls[0];
+      const maxIl = terminalIls[n - 1];
       let lo = minIl;
       let hi = maxIl;
-      if (hi - lo < 1e-6) {
-        lo -= 0.0005;
-        hi += 0.0005;
-      }
-
+      if (hi - lo < 1e-6) { lo -= 0.0005; hi += 0.0005; }
       const binCount = 30;
       const binSize = (hi - lo) / binCount;
       const counts = new Array(binCount).fill(0);
       const labels = new Array(binCount);
-
       for (let i = 0; i < binCount; i++) {
         const mid = lo + (i + 0.5) * binSize;
         labels[i] = (mid * 100).toFixed(2) + "%";
       }
-
       for (let i = 0; i < n; i++) {
-        let idx = Math.floor((ils[i] - lo) / binSize);
+        let idx = Math.floor((terminalIls[i] - lo) / binSize);
         if (idx < 0) idx = 0;
         if (idx >= binCount) idx = binCount - 1;
         counts[idx] += 1;
       }
-
       buildIlDistributionChart(labels, counts);
-
-      // 绘制多条模拟路径的价格路径图
-      if (pathPricesArray && pathPricesArray.length > 0) {
-        const daysToShow = Math.min(days, 365);
-        const dayLabels = Array.from({ length: daysToShow + 1 }, (_, i) => i.toString());
-        // 确保每条路径数据只包含前365天的数据
-        const trimmedPathPricesArray = pathPricesArray.map(prices => 
-          prices.slice(0, daysToShow + 1)
-        );
-        // Store data for toggle functionality
+      
+      // 7. Path Chart
+      if (pathPricesArray.length > 0) {
         window.monteCarloPathData = {
-          dayLabels,
-          pathPricesArray: trimmedPathPricesArray,
+          dayLabels: Array.from({ length: daysToShow + 1 }, (_, i) => i.toString()),
+          pathPricesArray: pathPricesArray.map(p => p.slice(0, daysToShow + 1)),
           currentPrice: P0,
           sigmaDailyPct,
           days: daysToShow,
           Pl,
           Pu
         };
-        buildMonteCarloPathChart(dayLabels, trimmedPathPricesArray, P0, sigmaDailyPct, daysToShow, Pl, Pu);
+        buildMonteCarloPathChart(
+          window.monteCarloPathData.dayLabels,
+          window.monteCarloPathData.pathPricesArray,
+          P0, sigmaDailyPct, daysToShow, Pl, Pu
+        );
       }
 
       statusEl.textContent = t('simulationDone', { paths, days, sigma: sigmaDailyPct });

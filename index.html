@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html id="htmlLang" lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>SOL/USDC PancakeSwap V3 (Solana) Pool Viewer</title>
+  <title>Is a Liquidity Pool Worth Investing In? - Solana 流动性池追踪工具</title>
   <!-- Chart.js for charts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -201,6 +201,35 @@
       background: rgba(34, 197, 94, 0.25);
       backdrop-filter: blur(4px);
       -webkit-backdrop-filter: blur(4px);
+    }
+
+    .days-quick-btn,
+    .vol-quick-btn {
+      padding: 3px 8px;
+      font-size: 9px;
+      min-width: auto;
+      height: auto;
+      border-radius: 6px;
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.25);
+      color: var(--accent);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .days-quick-btn:hover,
+    .vol-quick-btn:hover {
+      background: rgba(34, 197, 94, 0.22);
+      border-color: rgba(34, 197, 94, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .days-quick-btn:active,
+    .vol-quick-btn:active {
+      transform: translateY(0);
+      background: rgba(34, 197, 94, 0.18);
     }
 
     .run-simulation-btn {
@@ -635,9 +664,58 @@
       z-index: 1;
     }
 
+    /* Language switcher button */
+    .lang-switcher {
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      background: rgba(15, 23, 42, 0.75);
+      color: var(--text-muted);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      user-select: none;
+    }
+
+    .lang-switcher:hover {
+      background: radial-gradient(circle at top left, rgba(34, 197, 94, 0.12), transparent 55%);
+      border-color: rgba(34, 197, 94, 0.4);
+      transform: translateY(-1px);
+      color: var(--text-main);
+    }
+
+    .lang-switcher:active {
+      transform: translateY(0);
+      background: radial-gradient(circle at top left, rgba(34, 197, 94, 0.08), transparent 55%);
+    }
+
+    .lang-switcher-icon {
+      font-size: 11px;
+      opacity: 0.7;
+      transition: transform 0.3s ease, opacity 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .lang-switcher:hover .lang-switcher-icon {
+      opacity: 1;
+      transform: rotate(180deg);
+    }
+
     @media (max-width: 640px) {
       body {
         padding-top: 22px;
+      }
+
+      .lang-switcher {
+        padding: 4px 10px;
+        font-size: 11px;
       }
 
       .card {
@@ -663,18 +741,24 @@
   <main class="main">
     <header class="page-header">
       <div class="page-title-row">
-        <h1>Liquidity Pool Tracker</h1>
-        <span class="pill">Solana</span>
+        <h1 id="pageTitle">Liquidity Pool ToolBox</h1>
+        <span class="pill">Solana Liquidity Pool ToolBox</span>
+      </div>
+      <div class="page-title-row">
+        <button class="lang-switcher" id="langSwitcher" title="Switch Language / 切换语言">
+          <span class="lang-switcher-icon">🌐</span>
+          <span id="langSwitcherText">EN</span>
+        </button>
       </div>
       <p class="tagline">
-        <code>Live pool metrics fetched from the GeckoTerminal DEX API</code>
+        <code id="pageTagline">Live Pool Metrics and Impermanent Loss Calculator</code>
       </p>
     </header>
 
     <div class="card">
       <div class="card-header">
-        <div class="card-title">Pool ID</div>
-        <span class="badge">GeckoTerminal Pool Address</span>
+        <div class="card-title" id="poolIdTitle">Pool ID</div>
+        <span class="badge" id="geckoBadge">Popular Liquidity Pools</span>
       </div>
 
       <div class="popular-pools-container">
@@ -683,7 +767,7 @@
         </div>
       </div>
 
-      <label for="poolId">Paste any Solana pool address to inspect its stats.</label>
+      <label for="poolId" id="poolIdLabel">Paste any Solana pool address to inspect its stats.</label>
       <div class="input-row">
         <input
           id="poolId"
@@ -693,7 +777,7 @@
         />
         <button id="loadBtn">
           <span class="button-icon"></span>
-           Load Pool
+          <span id="loadBtnText">Load Pool</span>
         </button>
       </div>
       <div style="margin-top: 10px;">
@@ -707,24 +791,24 @@
         </button>
         <div id="customKeySection" style="display: none; margin-top: 8px;">
           <div class="input-row">
-            <input
-              id="birdeyeApiKey"
-              type="password"
-              placeholder="Enter your Birdeye API Key"
-              autocomplete="off"
-            />
-            <button id="toggleKeyVisibilityBtn" type="button" title="Show/Hide API Key" style="padding: 9px 12px;">
-              👁️
-            </button>
-            <button id="checkBirdeyeKeyBtn">
-              <span class="button-icon"></span>
-              Check Key
-            </button>
+          <input
+            id="birdeyeApiKey"
+            type="password"
+            placeholder="Enter your Birdeye API Key"
+            autocomplete="off"
+          />
+          <button id="toggleKeyVisibilityBtn" type="button" title="Show/Hide API Key" style="padding: 9px 12px;">
+            👁️
+          </button>
+          <button id="checkBirdeyeKeyBtn">
+            <span class="button-icon"></span>
+            <span id="checkKeyBtnText">Check Key</span>
+          </button>
           </div>
           <div class="small" id="birdeyeStatus" style="margin-top: 4px; opacity: 0.9;"></div>
 
         </div>
-        <div class="small" style="margin-top: 6px; opacity: 0.8; color: var(--text-muted);">
+        <div class="small" id="defaultKeyNote" style="margin-top: 6px; opacity: 0.8; color: var(--text-muted);">
           Default uses built-in API Key. To use your own Key, please click the button above.
         </div>
       </div>
@@ -735,25 +819,25 @@
     <div id="results" class="card" style="display:none;">
       <div class="results-card-header">
         <div>
-          <div class="results-title">Parsed Pool Data</div>
-          <div class="muted-label">Key metrics</div>
+          <div class="results-title" id="resultsTitle">Parsed Pool Data</div>
+          <div class="muted-label" id="keyMetricsLabel">Key metrics</div>
         </div>
-        <div class="muted-label">Live from GeckoTerminal</div>
+        <div class="muted-label" id="liveFromLabel">Live from GeckoTerminal</div>
       </div>
       <div id="poolInfo"></div>
 
       <!-- chart area -->
       <div class="chart-container">
         <div class="muted-label">
-          Last <span id="daysLabel">30</span> Days Liquidity & Volume
+          <span id="lastDaysLabel">Last</span> <span id="daysLabel">30</span> <span id="daysLabelSuffix">Days Liquidity & Volume</span>
         </div>
-        <div class="small">
+        <div class="small" id="tvlLineNote">
           TVL line uses current liquidity as an approximate level, daily volume from OHLCV candles.
         </div>
 
         <div class="range-control">
           <div class="range-meta">
-            <span>Lookback window</span>
+            <span id="lookbackWindowLabel">Lookback window</span>
             <span></span>
           </div>
           <input
@@ -800,8 +884,8 @@
       <div class="collapsible-section" style="margin-top: 14px;">
         <div class="collapsible-header" onclick="toggleCollapsible('rawJsonSection')">
           <span class="collapsible-arrow" id="rawJsonArrow">▶</span>
-          <span class="muted-label" style="margin-left: 6px;">Raw GeckoTerminal Response</span>
-          <span class="small" style="margin-left: 8px; opacity: 0.7;">Full JSON payload from GeckoTerminal pool snapshot API.</span>
+          <span class="muted-label" id="rawGeckoLabel" style="margin-left: 6px;">Raw GeckoTerminal Response</span>
+          <span class="small" id="rawGeckoDesc" style="margin-left: 8px; opacity: 0.7;">Full JSON payload from GeckoTerminal pool snapshot API.</span>
         </div>
         <div class="collapsible-content" id="rawJsonSection" style="display: none;">
           <pre id="rawJson"></pre>
@@ -811,8 +895,8 @@
       <div class="collapsible-section" style="margin-top: 10px;">
         <div class="collapsible-header" onclick="toggleCollapsible('birdeyeRawJsonSection')">
           <span class="collapsible-arrow" id="birdeyeRawJsonArrow">▶</span>
-          <span class="muted-label" style="margin-left: 6px;">Raw Birdeye OHLCV Response</span>
-          <span class="small" style="margin-left: 8px; opacity: 0.7;">Full JSON payload from Birdeye OHLCV API (if available).</span>
+          <span class="muted-label" id="rawBirdeyeLabel" style="margin-left: 6px;">Raw Birdeye OHLCV Response</span>
+          <span class="small" id="rawBirdeyeDesc" style="margin-left: 8px; opacity: 0.7;">Full JSON payload from Birdeye OHLCV API (if available).</span>
         </div>
         <div class="collapsible-content" id="birdeyeRawJsonSection" style="display: none;">
           <pre id="birdeyeRawJson"></pre>
@@ -824,13 +908,13 @@
     <div class="card" id="ilSimulatorCard" style="margin-top: 20px;">
       <div class="card-header">
         <div>
-          <div class="card-title">Impermanent Loss Simulator</div>
-          <div class="muted-label">PancakeSwap V3 · SOL / USDC · Monte Carlo</div>
+          <div class="card-title" id="ilSimulatorTitle">Impermanent Loss Simulator</div>
+          <div class="muted-label" id="ilSimulatorSubtitle">PancakeSwap V3 · SOL / USDC · Monte Carlo</div>
         </div>
         <span class="badge">IL · Distribution · CI</span>
       </div>
 
-      <p class="small" style="margin-bottom: 10px;">
+      <p class="small" id="ilSimulatorDesc" style="margin-bottom: 10px;">
         Enter the concentrated liquidity range, current price, daily volatility, and time period. Use geometric Brownian motion to perform Monte Carlo simulation on future prices, estimating expected IL, distribution, and confidence intervals.
       </p>
 
@@ -843,8 +927,42 @@
             type="number"
             step="0.0001"
             placeholder="e.g. 100"
-            value="100"
+            value="0.8"
           />
+          <div style="display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap;">
+            <button 
+              type="button"
+              class="vol-quick-btn"
+              onclick="setLowerBound(-0.05)"
+              title="Set lower bound to Current price × (1 - 0.05%)"
+            >
+              -0.05%
+            </button>
+            <button 
+              type="button"
+              class="vol-quick-btn"
+              onclick="setLowerBound(-1)"
+              title="Set lower bound to Current price × (1 - 1%)"
+            >
+              -1%
+            </button>
+            <button 
+              type="button"
+              class="vol-quick-btn"
+              onclick="setLowerBound(-20)"
+              title="Set lower bound to Current price × (1 - 20%)"
+            >
+              -20%
+            </button>
+            <button 
+              type="button"
+              class="vol-quick-btn"
+              onclick="setLowerBound(-99.9)"
+              title="Set lower bound to Current price × (1 - 99.9%)"
+            >
+              -99.9%
+            </button>
+          </div>
         </div>
         <div class="stat">
           <div class="stat-label">Price upper bound</div>
@@ -853,8 +971,42 @@
             type="number"
             step="0.0001"
             placeholder="e.g. 200"
-            value="200"
+            value="1.2"
           />
+          <div style="display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap;">
+            <button 
+              type="button"
+              class="vol-quick-btn"
+              onclick="setUpperBound(0.05)"
+              title="Set upper bound to Current price × (1 + 0.05%)"
+            >
+              +0.05%
+            </button>
+            <button 
+              type="button"
+              class="vol-quick-btn"
+              onclick="setUpperBound(1)"
+              title="Set upper bound to Current price × (1 + 1%)"
+            >
+              +1%
+            </button>
+            <button 
+              type="button"
+              class="vol-quick-btn"
+              onclick="setUpperBound(20)"
+              title="Set upper bound to Current price × (1 + 20%)"
+            >
+              +20%
+            </button>
+            <button 
+              type="button"
+              class="vol-quick-btn"
+              onclick="setUpperBound(99.9)"
+              title="Set upper bound to Current price × (1 + 99.9%)"
+            >
+              +99.9%
+            </button>
+          </div>
         </div>
         <div class="stat">
           <div class="stat-label">Current price (P₀)</div>
@@ -863,14 +1015,16 @@
             type="number"
             step="0.0001"
             placeholder="e.g. 130"
-            value="130"
+            value="1"
           />
         </div>
       </div>
 
       <div class="stat-grid" style="margin-bottom: 4px;">
         <div class="stat">
-          <div class="stat-label">Daily volatility  (percent)</div>
+          <div class="stat-label">
+            <span>Daily volatility (percent)</span>
+          </div>
           <input
             id="ilSigmaDaily"
             type="number"
@@ -878,9 +1032,41 @@
             placeholder="e.g. 7.26 means 7.26%"
             value="7.26"
           />
+          <div style="display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap;">
+            <button 
+              id="calcHvBtn0" 
+              type="button"
+              class="vol-quick-btn"
+              title="Calculate historical volatility for token0 from loaded price data"
+              style="display: none;"
+            >
+              📊 HV
+            </button>
+            <button 
+              id="calcHvBtn1" 
+              type="button"
+              class="vol-quick-btn"
+              title="Calculate historical volatility for token1 from loaded price data"
+              style="display: none;"
+            >
+              📊 HV
+            </button>
+            <button 
+              id="calcRatioVolBtn" 
+              type="button"
+              class="vol-quick-btn"
+              title="Calculate price ratio volatility from token0 and token1 HV and correlation"
+              style="display: none;"
+            >
+              <span id="ratioVolatilityBtnText">Ratio Volatility</span>
+            </button>
+          </div>
+          <div class="small" id="hvInfo" style="margin-top: 4px; opacity: 0.7; font-size: 10px;"></div>
         </div>
         <div class="stat">
-          <div class="stat-label">simulation days</div>
+          <div class="stat-label">
+            <span>simulation days</span>
+          </div>
           <input
             id="ilDays"
             type="number"
@@ -889,14 +1075,48 @@
             placeholder="Forecast days, e.g. 30"
             value="30"
           />
+          <div style="display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap;">
+            <button 
+              class="days-quick-btn"
+              data-days="1"
+              type="button"
+              title="Set to 1 day"
+            >
+              1d
+            </button>
+            <button 
+              class="days-quick-btn"
+              data-days="7"
+              type="button"
+              title="Set to 7 days"
+            >
+              7d
+            </button>
+            <button 
+              class="days-quick-btn"
+              data-days="30"
+              type="button"
+              title="Set to 30 days"
+            >
+              30d
+            </button>
+            <button 
+              class="days-quick-btn"
+              data-days="365"
+              type="button"
+              title="Set to 365 days"
+            >
+              365d
+            </button>
+          </div>
         </div>
         <div class="stat">
-          <div class="stat-label">Number of paths</div>
+          <div class="stat-label">Number of simulations</div>
           <input
             id="ilPaths"
             type="number"
-            step="100"
-            min="100"
+            step="1000"
+            min="1000"
             placeholder="Number of simulations, default 1000"
             value="1000"
           />
@@ -906,7 +1126,7 @@
       <div style="margin-top: 6px; margin-bottom: 4px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
         <button id="runIlBtn" class="run-simulation-btn">
           <span class="play-icon">▶</span>
-          Run Simulation
+          <span id="runSimulationText">Run Simulation</span>
         </button>
         <span class="small" id="ilStatus"></span>
       </div>
@@ -914,26 +1134,26 @@
 
       <!-- Output Overview -->
       <div style="margin-top: 12px;">
-        <div class="muted-label" style="margin-bottom: 4px;">Simulation results</div>
+        <div class="muted-label" id="simulationResultsLabel" style="margin-bottom: 4px;">Simulation results</div>
         <div class="stat-grid">
           <div class="stat">
-            <div class="stat-label">Expected IL</div>
+            <div class="stat-label" id="expectedILLabel">Expected IL</div>
             <div class="stat-value" id="ilExpected">–</div>
           </div>
           <div class="stat">
-            <div class="stat-label">Equivalent IL APR</div>
+            <div class="stat-label" id="equivalentILAprLabel">Equivalent IL APR</div>
             <div class="stat-value" id="ilApr">–</div>
           </div>
           <div class="stat">
-            <div class="stat-label">Fee Break-even APR</div>
+            <div class="stat-label" id="feeBreakEvenAprLabel">Fee Break-even APR</div>
             <div class="stat-value" id="ilFeeBreakEven">–</div>
           </div>
           <div class="stat">
-            <div class="stat-label">5% – 95% IL interval</div>
+            <div class="stat-label" id="ilIntervalLabel">5% – 95% IL interval</div>
             <div class="stat-value" id="ilCI">–</div>
           </div>
           <div class="stat">
-            <div class="stat-label">Std. deviation of IL</div>
+            <div class="stat-label" id="stdDeviationILLabel">Std. deviation of IL</div>
             <div class="stat-value" id="ilStd">–</div>
           </div>
         </div>
@@ -941,8 +1161,8 @@
 
       <!-- Distribution Chart -->
       <div class="chart-container" style="margin-top: 12px;">
-        <div class="muted-label">IL distribution (percent)</div>
-        <div class="small">
+        <div class="muted-label" id="ilDistributionLabel">IL distribution (percent)</div>
+        <div class="small" id="ilDistributionDesc">
           Based on IL samples obtained from Monte Carlo simulation, bin the results and plot as a frequency histogram.
         </div>
         <div class="chart-wrapper" style="margin-top: 10px;">
@@ -951,7 +1171,36 @@
         <div class="chart-legend" style="margin-top: 6px;">
           <div class="chart-legend-item">
             <span class="legend-dot" style="background: rgba(148,163,184,0.9);"></span>
-            <span>Frequency of simulated IL</span>
+            <span id="frequencyLabel">Frequency of simulated IL</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monte Carlo Simulation Path Chart -->
+      <div class="chart-container" style="margin-top: 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div class="muted-label" id="monteCarloPathLabel">蒙特卡洛模拟路径</div>
+          <button id="monteCarloAxisToggle" style="background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 4px; padding: 4px 8px; cursor: pointer; color: rgba(148, 163, 184, 0.9); font-size: 11px; display: flex; align-items: center; gap: 4px;" title="点击Y轴或此按钮切换价格/百分比">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2v20M2 12h20"></path>
+            </svg>
+            <span id="monteCarloAxisToggleText">价格</span>
+          </button>
+        </div>
+        <div class="small" id="monteCarloPathDesc">
+          展示蒙特卡洛模拟的价格变化过程，包括当前价格、每日波动率和模拟天数。
+        </div>
+        <div class="chart-wrapper" style="margin-top: 10px;">
+          <canvas id="monteCarloPathChart"></canvas>
+        </div>
+        <div class="chart-legend" style="margin-top: 6px;">
+          <div class="chart-legend-item">
+            <span class="legend-dot" style="background: rgba(73, 229, 94, 0.75);"></span>
+            <span id="pricePathLabel">价格路径</span>
+          </div>
+          <div class="chart-legend-item">
+            <span class="legend-dot" style="background: rgba(168, 85, 247, 0.5);"></span>
+            <span id="lpRangeLabel">LP Range</span>
           </div>
         </div>
       </div>
@@ -961,6 +1210,500 @@
   <script>
     const API_BASE = "https://api.geckoterminal.com/api/v2";
     const BIRDEYE_BASE = "https://public-api.birdeye.so";
+
+    // Language system
+    const translations = {
+      en: {
+        // Page header
+        title: "Is a Liquidity Pool Worth Investing In?",
+        tagline: "Live Pool Metrics and Impermanent Loss Calculator",
+        // Pool ID section
+        poolId: "Pool ID",
+        geckoTerminalBadge: "GeckoTerminal Pool Address",
+        poolIdLabel: "Paste any Solana pool address to inspect its stats.",
+        loadPool: "Load Pool",
+        apiKeyConfig: "api_key_config",
+        enterBirdeyeKey: "Enter your Birdeye API Key",
+        checkKey: "Check Key",
+        defaultApiKeyNote: "Default uses built-in API Key. To use your own Key, please click the button above.",
+        // Results section
+        parsedPoolData: "Parsed Pool Data",
+        keyMetrics: "Key metrics",
+        liveFromGeckoTerminal: "Live from GeckoTerminal",
+        lastDaysLiquidity: "Last {days} Days Liquidity & Volume",
+        tvlLineNote: "TVL line uses current liquidity as an approximate level, daily volume from OHLCV candles.",
+        lookbackWindow: "Lookback window",
+        rawGeckoTerminalResponse: "Raw GeckoTerminal Response",
+        rawGeckoTerminalDesc: "Full JSON payload from GeckoTerminal pool snapshot API.",
+        rawBirdeyeResponse: "Raw Birdeye OHLCV Response",
+        rawBirdeyeDesc: "Full JSON payload from Birdeye OHLCV API (if available).",
+        // Chart labels
+        tvlUsd: "TVL (USD)",
+        dailyVolumeUsd: "Daily Volume (USD)",
+        highPrice: "High Price",
+        lowPrice: "Low Price",
+        // IL Simulator
+        ilSimulator: "Impermanent Loss Simulator",
+        ilSimulatorSubtitle: "PancakeSwap V3 · SOL / USDC · Monte Carlo",
+        ilSimulatorDesc: "Enter the concentrated liquidity range, current price, daily volatility, and time period. Use geometric Brownian motion to perform Monte Carlo simulation on future prices, estimating expected IL, distribution, and confidence intervals.",
+        priceLowerBound: "Price lower bound",
+        priceLowerBoundPlaceholder: "e.g. 100",
+        priceUpperBound: "Price upper bound",
+        priceUpperBoundPlaceholder: "e.g. 200",
+        currentPrice: "Current price (P₀)",
+        currentPricePlaceholder: "e.g. 130",
+        dailyVolatility: "Daily volatility (percent)",
+        dailyVolatilityPlaceholder: "e.g. 7.26 means 7.26%",
+        simulationDays: "simulation days",
+        simulationDaysPlaceholder: "Forecast days, e.g. 30",
+        numberOfPaths: "Number of simulations",
+        numberOfPathsPlaceholder: "Number of simulations, default 1000",
+        runSimulation: "Run Simulation",
+        runningSimulation: "Running Monte Carlo simulation...",
+        simulationResults: "Simulation results",
+        expectedIL: "Expected IL",
+        equivalentILApr: "Equivalent IL APR",
+        feeBreakEvenApr: "Fee Break-even APR",
+        ilInterval: "5% – 95% IL interval",
+        stdDeviationIL: "Std. deviation of IL",
+        ilDistribution: "IL distribution (percent)",
+        ilDistributionDesc: "Based on IL samples obtained from Monte Carlo simulation, bin the results and plot as a frequency histogram.",
+        frequencyOfSimulatedIL: "Frequency of simulated IL",
+        monteCarloPath: "Monte Carlo Simulation Path",
+        monteCarloPathDesc: "Shows the price evolution of the Monte Carlo simulation paths, based on current price, daily volatility, and simulation days.",
+        pricePath: "Price Path",
+        lpRange: "LP Range",
+        dayLabel: "Day {day}",
+        priceLabel: "Price",
+        percentageLabel: "Percentage (%)",
+        currentPriceLabel: "Current Price",
+        dailyVolatilityLabel: "Daily Volatility",
+        simulationDaysLabel: "Simulation Days",
+        daysAxisLabel: "Days",
+        // Stats
+        dex: "DEX",
+        pair: "Pair",
+        poolIdLpId: "Pool ID (LP ID)",
+        priceUsd: "{symbol} Price (USD)",
+        volume7d: "7-Day Daily Average (USD)",
+        marketCap: "Market Cap (USD)",
+        correlationCoefficient: "Correlation Coefficient (ρ)",
+        lastUpdated: "Last Updated",
+        calculating: "Calculating...",
+        // Loading messages
+        loadingFromGeckoTerminal: "Loading from GeckoTerminal API...",
+        loadingOhlcvData: "Loading 180 days of OHLCV data for both tokens...",
+        // Simulation status
+        simulationDone: "Done. Simulated {paths} paths over {days} days (σ₍daily₎ = {sigma}%).",
+        // Errors
+        pleaseInputPoolId: "Please input a pool id (Solana pool address).",
+        invalidPriceInput: "Please enter valid prices, including lower bound, upper bound, and current price.",
+        priceMustBePositive: "Price must be greater than 0.",
+        lowerBoundMustBeLess: "Lower bound must be less than upper bound.",
+        invalidVolatility: "Please enter a valid daily volatility (percentage).",
+        daysMustBePositive: "Forecast days must be a positive integer.",
+        daysExceedsLimit: "Simulation days cannot exceed 3650.",
+        pathsExceedsLimit: "Number of simulations cannot exceed 1000000.",
+        // Ratio volatility
+        ratioVolatility: "Ratio Volatility",
+        // HV buttons
+        hvToken0: " HV",
+        hvToken1: " HV",
+        // HV errors
+        insufficientPriceData: "Insufficient price data to calculate volatility for {tokenName} (need at least 10 valid prices).",
+        needBothVolatilities: "Insufficient data: Need both token0 and token1 volatility.",
+        cannotCalculateCorrelation: "Insufficient data: Cannot calculate correlation coefficient.",
+        invalidVolatilityCalculation: "Error: Invalid volatility calculation (negative variance).",
+        noPriceDataAvailable: "No price data available. Please load a pool first.",
+        calculatingRatioVolatility: "Calculating price ratio volatility...",
+      },
+      zh: {
+        // Page header
+        title: "这个流动性池值得投资吗？",
+        tagline: "实时指标和无常损失计算器",
+        // Pool ID section
+        poolId: "流动性池ID",
+        geckoTerminalBadge: "热门流动性池",
+        poolIdLabel: "粘贴任意 Solana 池地址以查看其统计信息。",
+        loadPool: "加载流动性池",
+        apiKeyConfig: "api_key_config",
+        enterBirdeyeKey: "输入您的 Birdeye API 密钥",
+        checkKey: "检查密钥",
+        defaultApiKeyNote: "默认使用内置 API 密钥。要使用您自己的密钥，请点击上面的按钮。",
+        // Results section
+        parsedPoolData: "流动性池数据",
+        keyMetrics: "关键指标",
+        liveFromGeckoTerminal: "来自 GeckoTerminal 的实时数据",
+        lastDaysLiquidity: "最近 {days} 天的流动性和交易量",
+        tvlLineNote: "TVL 线使用当前流动性作为近似水平，每日交易量来自 OHLCV 。",
+        lookbackWindow: "回看窗口",
+        rawGeckoTerminalResponse: "原始 GeckoTerminal 响应",
+        rawGeckoTerminalDesc: "来自 GeckoTerminal 池快照 API 的完整 JSON 。",
+        rawBirdeyeResponse: "原始 Birdeye OHLCV 响应",
+        rawBirdeyeDesc: "来自 Birdeye OHLCV API 的完整 JSON（如果可用）。",
+        // Chart labels
+        tvlUsd: "TVL (美元)",
+        dailyVolumeUsd: "每日交易量 (美元)",
+        highPrice: "最高价",
+        lowPrice: "最低价",
+        // IL Simulator
+        ilSimulator: "无常损失模拟器",
+        ilSimulatorSubtitle: "PancakeSwap V3 · SOL / USDC · 蒙特卡洛",
+        ilSimulatorDesc: "输入集中流动性范围、当前价格、每日波动率和时间段。使用GBM（几何布朗运动）对未来价格进行蒙特卡洛模拟，估算预期 IL、分布和置信区间。",
+        priceLowerBound: "LP range 价格下限",
+        priceLowerBoundPlaceholder: "例如：100",
+        priceUpperBound: "LP range价格上限",
+        priceUpperBoundPlaceholder: "例如：200",
+        currentPrice: "当前价格 (P₀)",
+        currentPricePlaceholder: "例如：130",
+        dailyVolatility: "每日波动率 (百分比)",
+        dailyVolatilityPlaceholder: "例如 7.26 表示 7.26%",
+        simulationDays: "模拟天数",
+        simulationDaysPlaceholder: "预测天数，例如 30",
+        numberOfPaths: "模拟次数",
+        numberOfPathsPlaceholder: "模拟次数，默认 1000",
+        runSimulation: "运行模拟",
+        runningSimulation: "正在运行蒙特卡洛模拟...",
+        simulationResults: "模拟结果",
+        expectedIL: "预期 IL",
+        equivalentILApr: "等效 IL 年化",
+        feeBreakEvenApr: "盈亏平衡线",
+        ilInterval: "5% – 95% IL 区间",
+        stdDeviationIL: "IL 标准差",
+        ilDistribution: "IL 分布 (百分比)",
+        ilDistributionDesc: "基于从蒙特卡洛模拟获得的 IL 样本，将结果绘制为频率直方图。",
+        frequencyOfSimulatedIL: "模拟得到的 IL 分布频率",
+        monteCarloPath: "蒙特卡洛模拟路径",
+        monteCarloPathDesc: "展示第一次模拟的价格变化过程，包括当前价格、每日波动率和模拟天数。",
+        pricePath: "价格路径",
+        lpRange: "LP Range",
+        dayLabel: "第 {day} 天",
+        priceLabel: "价格",
+        percentageLabel: "百分比 (%)",
+        currentPriceLabel: "当前价格",
+        dailyVolatilityLabel: "每日波动率",
+        simulationDaysLabel: "模拟天数",
+        daysAxisLabel: "天数",
+        // Stats
+        dex: "去中心化交易所",
+        pair: "交易对",
+        poolIdLpId: "流动性池ID (LP ID)",
+        priceUsd: "{symbol} 价格 (美元)",
+        volume7d: "7日日均交易量 (美元)",
+        marketCap: "市值 (美元)",
+        correlationCoefficient: "相关系数 (ρ)",
+        lastUpdated: "最后一次更新于：",
+        calculating: "计算中...",
+        // Loading messages
+        loadingFromGeckoTerminal: "正在从 GeckoTerminal API 加载...",
+        loadingOhlcvData: "正在加载两个代币的 180 天 OHLCV 数据...",
+        // Simulation status
+        simulationDone: "完成。模拟了 {paths} 次，每次模拟 {days} 天 (σ₍daily₎ = {sigma}%)。",
+        // Errors
+        pleaseInputPoolId: "请输入流动性池ID (Solana 流动性池地址)。",
+        invalidPriceInput: "请填写有效的价格，包含区间下界、上界和当前价格。",
+        priceMustBePositive: "价格必须大于 0。",
+        lowerBoundMustBeLess: "区间下界必须小于上界。",
+        invalidVolatility: "请填写有效的日波动率（百分比）。",
+        daysMustBePositive: "预测天数必须为正整数。",
+        daysExceedsLimit: "模拟天数不能超过 3650。",
+        pathsExceedsLimit: "模拟次数不能超过 1000000。",
+        // Ratio volatility
+        ratioVolatility: "加权波动率",
+        // HV buttons
+        hvToken0: " 历史波动率",
+        hvToken1: " 历史波动率",
+        // HV errors
+        insufficientPriceData: "价格数据不足，无法计算 {tokenName} 的波动率（至少需要 10 个有效价格）。",
+        needBothVolatilities: "数据不足：需要 token0 和 token1 的波动率。",
+        cannotCalculateCorrelation: "数据不足：无法计算相关系数。",
+        invalidVolatilityCalculation: "错误：无效的波动率计算（方差为负）。",
+        noPriceDataAvailable: "没有价格数据可用。请先加载一个池。",
+        calculatingRatioVolatility: "正在计算价格比率波动率...",
+      }
+    };
+
+    // Detect user language
+    function detectUserLanguage() {
+      // Check localStorage first
+      const savedLang = localStorage.getItem('appLanguage');
+      if (savedLang && (savedLang === 'en' || savedLang === 'zh')) {
+        return savedLang;
+      }
+      // Detect from browser
+      const browserLang = navigator.language || navigator.userLanguage;
+      if (browserLang.startsWith('zh')) {
+        return 'zh';
+      }
+      return 'en';
+    }
+
+    // Current language
+    let currentLang = detectUserLanguage();
+
+    // Translation function
+    function t(key, params = {}) {
+      const translation = translations[currentLang]?.[key] || translations.en[key] || key;
+      if (params && Object.keys(params).length > 0) {
+        return translation.replace(/\{(\w+)\}/g, (match, paramKey) => {
+          return params[paramKey] !== undefined ? params[paramKey] : match;
+        });
+      }
+      return translation;
+    }
+
+    // Update all text content
+    function updateLanguage() {
+      // Save to localStorage
+      localStorage.setItem('appLanguage', currentLang);
+      
+      // Update HTML lang attribute
+      const htmlLang = document.getElementById('htmlLang');
+      if (htmlLang) {
+        htmlLang.setAttribute('lang', currentLang === 'zh' ? 'zh-CN' : 'en');
+      } else {
+        document.documentElement.setAttribute('lang', currentLang === 'zh' ? 'zh-CN' : 'en');
+      }
+      
+      // Update language switcher
+      const langSwitcherText = document.getElementById('langSwitcherText');
+      if (langSwitcherText) {
+        langSwitcherText.textContent = currentLang === 'zh' ? 'EN/中文' : '中文/EN';
+      }
+
+      // Update page title
+      const pageTitle = document.getElementById('pageTitle');
+      if (pageTitle) pageTitle.textContent = t('title');
+      const pageTagline = document.getElementById('pageTagline');
+      if (pageTagline) pageTagline.textContent = t('tagline');
+      
+      // Update Pool ID section
+      const poolIdTitle = document.getElementById('poolIdTitle');
+      if (poolIdTitle) poolIdTitle.textContent = t('poolId');
+      const geckoBadge = document.getElementById('geckoBadge');
+      if (geckoBadge) geckoBadge.textContent = t('geckoTerminalBadge');
+      const poolIdLabel = document.getElementById('poolIdLabel');
+      if (poolIdLabel) poolIdLabel.textContent = t('poolIdLabel');
+      const loadBtnText = document.getElementById('loadBtnText');
+      if (loadBtnText) loadBtnText.textContent = t('loadPool');
+      const toggleKeyText = document.getElementById('toggleCustomKeyText');
+      if (toggleKeyText) toggleKeyText.textContent = t('apiKeyConfig');
+      const birdeyeKeyInput = document.getElementById('birdeyeApiKey');
+      if (birdeyeKeyInput) birdeyeKeyInput.placeholder = t('enterBirdeyeKey');
+      const checkKeyBtnText = document.getElementById('checkKeyBtnText');
+      if (checkKeyBtnText) checkKeyBtnText.textContent = t('checkKey');
+      const defaultKeyNote = document.getElementById('defaultKeyNote');
+      if (defaultKeyNote) defaultKeyNote.textContent = t('defaultApiKeyNote');
+
+      // Update results section
+      const resultsTitle = document.getElementById('resultsTitle');
+      if (resultsTitle) resultsTitle.textContent = t('parsedPoolData');
+      const keyMetricsLabel = document.getElementById('keyMetricsLabel');
+      if (keyMetricsLabel) keyMetricsLabel.textContent = t('keyMetrics');
+      const liveFromLabel = document.getElementById('liveFromLabel');
+      if (liveFromLabel) liveFromLabel.textContent = t('liveFromGeckoTerminal');
+      
+      // Update chart section
+      const lastDaysLabel = document.getElementById('lastDaysLabel');
+      const daysLabelSuffix = document.getElementById('daysLabelSuffix');
+      if (lastDaysLabel && daysLabelSuffix) {
+        const daysText = t('lastDaysLiquidity', { days: document.getElementById('daysLabel')?.textContent || '30' });
+        // Split the text appropriately
+        if (currentLang === 'zh') {
+          lastDaysLabel.textContent = '最近 ';
+          daysLabelSuffix.textContent = ' 天的流动性和交易量';
+        } else {
+          lastDaysLabel.textContent = 'Last ';
+          daysLabelSuffix.textContent = ' Days Liquidity & Volume';
+        }
+      }
+      const tvlLineNote = document.getElementById('tvlLineNote');
+      if (tvlLineNote) tvlLineNote.textContent = t('tvlLineNote');
+      const lookbackWindowLabel = document.getElementById('lookbackWindowLabel');
+      if (lookbackWindowLabel) lookbackWindowLabel.textContent = t('lookbackWindow');
+      
+      // Update raw JSON sections
+      const rawGeckoLabel = document.getElementById('rawGeckoLabel');
+      if (rawGeckoLabel) rawGeckoLabel.textContent = t('rawGeckoTerminalResponse');
+      const rawGeckoDesc = document.getElementById('rawGeckoDesc');
+      if (rawGeckoDesc) rawGeckoDesc.textContent = t('rawGeckoTerminalDesc');
+      const rawBirdeyeLabel = document.getElementById('rawBirdeyeLabel');
+      if (rawBirdeyeLabel) rawBirdeyeLabel.textContent = t('rawBirdeyeResponse');
+      const rawBirdeyeDesc = document.getElementById('rawBirdeyeDesc');
+      if (rawBirdeyeDesc) rawBirdeyeDesc.textContent = t('rawBirdeyeDesc');
+
+      // Update IL Simulator
+      const ilSimulatorTitle = document.getElementById('ilSimulatorTitle');
+      if (ilSimulatorTitle) ilSimulatorTitle.textContent = t('ilSimulator');
+      const ilSimulatorSubtitle = document.getElementById('ilSimulatorSubtitle');
+      if (ilSimulatorSubtitle) ilSimulatorSubtitle.textContent = t('ilSimulatorSubtitle');
+      const ilSimulatorDesc = document.getElementById('ilSimulatorDesc');
+      if (ilSimulatorDesc) ilSimulatorDesc.textContent = t('ilSimulatorDesc');
+      const runSimulationText = document.getElementById('runSimulationText');
+      if (runSimulationText) runSimulationText.textContent = t('runSimulation');
+      const simulationResultsLabel = document.getElementById('simulationResultsLabel');
+      if (simulationResultsLabel) simulationResultsLabel.textContent = t('simulationResults');
+      const expectedILLabel = document.getElementById('expectedILLabel');
+      if (expectedILLabel) expectedILLabel.textContent = t('expectedIL');
+      const equivalentILAprLabel = document.getElementById('equivalentILAprLabel');
+      if (equivalentILAprLabel) equivalentILAprLabel.textContent = t('equivalentILApr');
+      const feeBreakEvenAprLabel = document.getElementById('feeBreakEvenAprLabel');
+      if (feeBreakEvenAprLabel) feeBreakEvenAprLabel.textContent = t('feeBreakEvenApr');
+      const ilIntervalLabel = document.getElementById('ilIntervalLabel');
+      if (ilIntervalLabel) ilIntervalLabel.textContent = t('ilInterval');
+      const stdDeviationILLabel = document.getElementById('stdDeviationILLabel');
+      if (stdDeviationILLabel) stdDeviationILLabel.textContent = t('stdDeviationIL');
+      const ilDistributionLabel = document.getElementById('ilDistributionLabel');
+      if (ilDistributionLabel) ilDistributionLabel.textContent = t('ilDistribution');
+      const ilDistributionDesc = document.getElementById('ilDistributionDesc');
+      if (ilDistributionDesc) ilDistributionDesc.textContent = t('ilDistributionDesc');
+      const frequencyLabel = document.getElementById('frequencyLabel');
+      if (frequencyLabel) frequencyLabel.textContent = t('frequencyOfSimulatedIL');
+      const monteCarloPathLabel = document.getElementById('monteCarloPathLabel');
+      if (monteCarloPathLabel) monteCarloPathLabel.textContent = t('monteCarloPath');
+      const monteCarloPathDesc = document.getElementById('monteCarloPathDesc');
+      if (monteCarloPathDesc) monteCarloPathDesc.textContent = t('monteCarloPathDesc');
+      const pricePathLabel = document.getElementById('pricePathLabel');
+      if (pricePathLabel) pricePathLabel.textContent = t('pricePath');
+      const lpRangeLabel = document.getElementById('lpRangeLabel');
+      if (lpRangeLabel) lpRangeLabel.textContent = t('lpRange');
+      
+      // Update ratio volatility button
+      const ratioVolatilityBtnText = document.getElementById('ratioVolatilityBtnText');
+      if (ratioVolatilityBtnText) ratioVolatilityBtnText.textContent = t('ratioVolatility');
+
+      // Update stat labels
+      updateStatLabels();
+      
+      // Update chart labels
+      updateChartLabels();
+      
+      // Update input placeholders
+      const ilLower = document.getElementById('ilLower');
+      if (ilLower) ilLower.placeholder = t('priceLowerBoundPlaceholder');
+      const ilUpper = document.getElementById('ilUpper');
+      if (ilUpper) ilUpper.placeholder = t('priceUpperBoundPlaceholder');
+      const ilP0 = document.getElementById('ilP0');
+      if (ilP0) ilP0.placeholder = t('currentPricePlaceholder');
+      const ilSigmaDaily = document.getElementById('ilSigmaDaily');
+      if (ilSigmaDaily) ilSigmaDaily.placeholder = t('dailyVolatilityPlaceholder');
+      const ilDays = document.getElementById('ilDays');
+      if (ilDays) ilDays.placeholder = t('simulationDaysPlaceholder');
+      const ilPaths = document.getElementById('ilPaths');
+      if (ilPaths) ilPaths.placeholder = t('numberOfPathsPlaceholder');
+    }
+
+    // Update stat labels dynamically
+    function updateStatLabels() {
+      const statLabels = document.querySelectorAll('.stat-label');
+      statLabels.forEach(label => {
+        const text = label.textContent.trim();
+        if (text === 'Price lower bound' || text === '价格下限' || text.includes('LP range 价格下限') || text.includes('价格下限')) {
+          label.textContent = t('priceLowerBound');
+        } else if (text === 'Price upper bound' || text === '价格上限' || text.includes('LP range价格上限') || text.includes('价格上限')) {
+          label.textContent = t('priceUpperBound');
+        } else if (text.includes('Current price') || text.includes('当前价格')) {
+          label.textContent = t('currentPrice');
+        } else if (text.includes('Daily volatility') || text.includes('每日波动率')) {
+          label.innerHTML = `<span>${t('dailyVolatility')}</span>`;
+        } else if (text.includes('simulation days') || text.includes('模拟天数')) {
+          label.innerHTML = `<span>${t('simulationDays')}</span>`;
+        } else if (text === 'Number of paths' || text === 'Number of simulations' || text === '路径数量' || text === '模拟次数') {
+          label.textContent = t('numberOfPaths');
+        } else if (text === 'Expected IL' || text === '预期 IL') {
+          label.textContent = t('expectedIL');
+        } else if (text === 'Equivalent IL APR' || text.includes('等效 IL 年化收益率')) {
+          label.textContent = t('equivalentILApr');
+        } else if (text === 'Fee Break-even APR' || text.includes('手续费盈亏平衡') || text === '盈亏平衡线') {
+          label.textContent = t('feeBreakEvenApr');
+        } else if (text.includes('5% – 95%') || text.includes('5% – 95%')) {
+          label.textContent = t('ilInterval');
+        } else if (text.includes('Std. deviation') || text.includes('标准差')) {
+          label.textContent = t('stdDeviationIL');
+        } else if (text === 'DEX' || text === '去中心化交易所') {
+          label.textContent = t('dex');
+        } else if (text === 'Pair' || text === '交易对') {
+          label.textContent = t('pair');
+        } else if (text.includes('Pool ID (LP ID)') || text.includes('池ID (LP ID)')) {
+          label.textContent = t('poolIdLpId');
+        } else if (text.includes('Volume 7d') || text.includes('7-Day Daily Average') || text.includes('7天交易量') || text.includes('7日日均')) {
+          label.textContent = t('volume7d');
+        } else if (text.includes('Market Cap') || text.includes('市值')) {
+          label.textContent = t('marketCap');
+        } else if (text.includes('Correlation Coefficient') || text.includes('相关系数')) {
+          label.textContent = t('correlationCoefficient');
+        } else if (text === 'Last Updated' || text === '最后更新') {
+          label.textContent = t('lastUpdated');
+        } else if (text.includes('价格 (美元)') || (text.includes('Price (USD)') && text.includes('价格'))) {
+          // Handle price labels that might have Chinese text
+          // Try to extract symbol from text like "SOL 价格 (美元)" or "{symbol} 价格 (美元)"
+          const symbolMatch = text.match(/(\w+)\s*价格/);
+          if (symbolMatch && symbolMatch[1]) {
+            label.textContent = t('priceUsd', { symbol: symbolMatch[1] });
+          } else {
+            // Fallback: replace Chinese with English
+            label.textContent = text.replace(/\s*价格\s*\(美元\)/g, ' Price (USD)').replace(/价格/g, 'Price');
+          }
+        }
+      });
+    }
+
+    // Update chart labels
+    function updateChartLabels() {
+      const tvlLegend = document.getElementById('tvlLegend');
+      if (tvlLegend) {
+        const span = tvlLegend.querySelector('span:last-child');
+        if (span && (span.textContent.includes('TVL') || span.textContent.includes('TVL'))) {
+          span.textContent = t('tvlUsd');
+        }
+      }
+      const volumeLegend = document.getElementById('volumeLegend');
+      if (volumeLegend) {
+        const span = volumeLegend.querySelector('span:last-child');
+        if (span && (span.textContent.includes('Daily Volume') || span.textContent.includes('每日交易量'))) {
+          span.textContent = t('dailyVolumeUsd');
+        }
+      }
+      const highLabels = document.querySelectorAll('#token0HighLabel, #token1HighLabel');
+      highLabels.forEach(el => {
+        if (el && (el.textContent.includes('High Price') || el.textContent.includes('最高价'))) {
+          el.textContent = t('highPrice');
+        }
+      });
+      const lowLabels = document.querySelectorAll('#token0LowLabel, #token1LowLabel');
+      lowLabels.forEach(el => {
+        if (el && (el.textContent.includes('Low Price') || el.textContent.includes('最低价'))) {
+          el.textContent = t('lowPrice');
+        }
+      });
+      
+      // Update Monte Carlo Simulation Path chart axis labels
+      if (monteCarloPathChartInstance) {
+        monteCarloPathChartInstance.options.scales.x.title.text = t('daysAxisLabel');
+        monteCarloPathChartInstance.options.scales.y.title.text = monteCarloAxisMode === 'percentage' ? t('percentageLabel') : t('priceLabel');
+        monteCarloPathChartInstance.update('none');
+      }
+      
+      // Update Monte Carlo axis toggle button text
+      const toggleText = document.getElementById('monteCarloAxisToggleText');
+      if (toggleText) {
+        toggleText.textContent = monteCarloAxisMode === 'price' ? t('priceLabel') : t('percentageLabel');
+      }
+    }
+
+    // Language switcher button event
+    const langSwitcher = document.getElementById('langSwitcher');
+    if (langSwitcher) {
+      langSwitcher.addEventListener('click', () => {
+        currentLang = currentLang === 'en' ? 'zh' : 'en';
+        updateLanguage();
+      });
+    }
+
+    // Initialize language on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      updateLanguage();
+    });
 
     function toggleCollapsible(sectionId) {
       const section = document.getElementById(sectionId);
@@ -1792,7 +2535,7 @@
       const birdeyeRawEl = document.getElementById("birdeyeRawJson");
 
       errorEl.textContent = "";
-      loadingEl.textContent = "Loading from GeckoTerminal API...";
+      loadingEl.textContent = t('loadingFromGeckoTerminal');
       resultsEl.style.display = "none";
       infoEl.innerHTML = "";
       rawEl.textContent = "";
@@ -1800,7 +2543,7 @@
 
       try {
         if (!poolId || poolId.trim() === "") {
-          throw new Error("Please input a pool id (Solana pool address).");
+          throw new Error(t('pleaseInputPoolId'));
         }
 
         const cleanId = poolId.trim();
@@ -2053,7 +2796,43 @@
         }
         
         const liquidityUsd = attr.reserve_in_usd || attr.liquidity_in_usd || "N/A";
-        const dexName = attr.dex_name || "PancakeSwap V3 (Solana)";
+        
+        // 提取DEX信息，按优先级尝试多个可能的路径
+        let dexName = "N/A";
+        
+        // 方法1: 从 json.dex.data.id 获取（直接路径）
+        if (json.dex?.data?.id) {
+          dexName = json.dex.data.id;
+        }
+        // 方法2: 从 relationships.dex 获取
+        else if (data.relationships?.dex?.data?.id) {
+          dexName = data.relationships.dex.data.id;
+        }
+        // 方法3: 从 included 数组中查找 type 为 'dex' 的项
+        else if (json.included && Array.isArray(json.included)) {
+          const dexItem = json.included.find(item => item.type === 'dex');
+          if (dexItem?.id) {
+            dexName = dexItem.id;
+          } else if (dexItem?.attributes?.name) {
+            dexName = dexItem.attributes.name;
+          }
+        }
+        // 方法4: 从 attributes.dex_name 获取
+        else if (attr.dex_name) {
+          dexName = attr.dex_name;
+        }
+        // 方法5: 从 attributes.dex 获取
+        else if (attr.dex) {
+          dexName = typeof attr.dex === 'string' ? attr.dex : (attr.dex.name || attr.dex.id || "N/A");
+        }
+        
+        // 格式化DEX名称（将连字符转换为空格并首字母大写）
+        if (dexName !== "N/A" && dexName) {
+          dexName = dexName
+            .split('-')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+        }
         
         // 显示最近一次拉取时间的时间戳
         const lastUpdated = new Date().toISOString();
@@ -2061,25 +2840,25 @@
         infoEl.innerHTML = `
           <div class="stat-grid">
             <div class="stat">
-              <div class="stat-label">DEX</div>
+              <div class="stat-label">${t('dex')}</div>
               <div class="stat-value">${dexName}</div>
             </div>
             <div class="stat">
-              <div class="stat-label">Pair</div>
+              <div class="stat-label">${t('pair')}</div>
               <div class="stat-value">${baseSymbol} / ${quoteSymbol}</div>
             </div>
             <div class="stat">
-              <div class="stat-label">Pool ID (LP ID)</div>
+              <div class="stat-label">${t('poolIdLpId')}</div>
               <div class="stat-value">${cleanId}</div>
             </div>
             <div class="stat">
-              <div class="stat-label">${baseSymbol} Price (USD)</div>
+              <div class="stat-label">${t('priceUsd', { symbol: baseSymbol })}</div>
               <div class="stat-value">
                 ${token0PriceDisplay} USD
               </div>
             </div>
             <div class="stat">
-              <div class="stat-label">${quoteSymbol} Price (USD)</div>
+              <div class="stat-label">${t('priceUsd', { symbol: quoteSymbol })}</div>
               <div class="stat-value">
                 ${token1PriceDisplay} USD
               </div>
@@ -2099,19 +2878,19 @@
               </div>
             </div>
             <div class="stat">
-              <div class="stat-label">Volume 7d (USD)</div>
-              <div class="stat-value" id="volume7dValue">计算中...</div>
+              <div class="stat-label">${t('volume7d')}</div>
+              <div class="stat-value" id="volume7dValue">${t('calculating')}</div>
             </div>
             <div class="stat">
-              <div class="stat-label">Market Cap (USD)</div>
+              <div class="stat-label">${baseSymbol !== "N/A" ? `${baseSymbol} ${t('marketCap')}` : t('marketCap')}</div>
               <div class="stat-value" id="marketCapUsdValue">${marketCapUsdDisplay}</div>
             </div>
             <div class="stat">
-              <div class="stat-label">Estimated Fees Per Day (USD)</div>
-              <div class="stat-value" id="estimatedFeesPerDayValue">计算中...</div>
+              <div class="stat-label">${t('correlationCoefficient')}</div>
+              <div class="stat-value" id="correlationValue">${t('calculating')}</div>
             </div>
             <div class="stat">
-              <div class="stat-label">Last Updated</div>
+              <div class="stat-label">${t('lastUpdated')}</div>
               <div class="stat-value">${lastUpdated}</div>
             </div>
           </div>
@@ -2134,7 +2913,7 @@
         currentQuoteSymbol = quoteSymbol;
 
         // 2, fetch ohlcv - 总是获取180天的数据并存储
-        loadingEl.textContent = "Loading 180 days of OHLCV data for both tokens...";
+        loadingEl.textContent = t('loadingOhlcvData');
         let ohlcvList0 = [];
         let ohlcvList1 = [];
         
@@ -2220,7 +2999,36 @@
           ? [...mergedData].sort((a, b) => a[0] - b[0]) 
           : [];
 
-        // 计算最近7天的总成交量
+        // 更新 Current price (P₀) 和相关价格范围
+        const ilP0El = document.getElementById("ilP0");
+        const ilLowerEl = document.getElementById("ilLower");
+        const ilUpperEl = document.getElementById("ilUpper");
+        
+        let currentPrice = 1; // 默认值为 1
+        
+        // 如果有数据，尝试从 token0 的最新价格获取
+        if (storedOhlcvData.length > 0) {
+          const lastEntry = storedOhlcvData[storedOhlcvData.length - 1];
+          const token0LatestPrice = lastEntry[4]; // close0 在索引4
+          if (token0LatestPrice !== null && token0LatestPrice !== undefined && !isNaN(Number(token0LatestPrice)) && Number(token0LatestPrice) > 0) {
+            currentPrice = Number(token0LatestPrice);
+          }
+        }
+        
+        // 更新 Current price (P₀)
+        if (ilP0El) {
+          ilP0El.value = currentPrice;
+        }
+        
+        // 根据 Current price 计算并更新 Price lower bound 和 Price upper bound
+        if (ilLowerEl) {
+          ilLowerEl.value = (currentPrice * 0.8).toFixed(4);
+        }
+        if (ilUpperEl) {
+          ilUpperEl.value = (currentPrice * 1.2).toFixed(4);
+        }
+
+        // 计算7日日均成交量
         let volume7d = "N/A";
         if (storedOhlcvData.length > 0) {
           // 取最后7天的数据
@@ -2231,60 +3039,42 @@
             return sum + (Number.isFinite(vol) ? Number(vol) : 0);
           }, 0);
           
-          if (totalVolume > 0) {
+          // 计算7日日均（总成交量除以7）
+          const dailyAverage = totalVolume / 7;
+          
+          if (dailyAverage > 0) {
             // 格式化显示
-            if (Math.abs(totalVolume) >= 1e9) {
-              volume7d = (totalVolume / 1e9).toFixed(2) + "B";
-            } else if (Math.abs(totalVolume) >= 1e6) {
-              volume7d = (totalVolume / 1e6).toFixed(2) + "M";
-            } else if (Math.abs(totalVolume) >= 1e3) {
-              volume7d = (totalVolume / 1e3).toFixed(2) + "K";
+            if (Math.abs(dailyAverage) >= 1e9) {
+              volume7d = (dailyAverage / 1e9).toFixed(2) + "B";
+            } else if (Math.abs(dailyAverage) >= 1e6) {
+              volume7d = (dailyAverage / 1e6).toFixed(2) + "M";
+            } else if (Math.abs(dailyAverage) >= 1e3) {
+              volume7d = (dailyAverage / 1e3).toFixed(2) + "K";
             } else {
-              volume7d = totalVolume.toFixed(2);
+              volume7d = dailyAverage.toFixed(2);
             }
           } else {
             volume7d = "0";
           }
         }
         
-        // 更新7天成交量显示
+        // 更新7日日均成交量显示
         const volume7dEl = document.getElementById("volume7dValue");
         if (volume7dEl) {
           volume7dEl.textContent = volume7d;
         }
 
-        // 计算 Estimated Fees Per Day = (Volume 7d / 7) * 0.01%
-        let estimatedFeesPerDay = "N/A";
-        if (storedOhlcvData.length > 0) {
-          const last7Days = storedOhlcvData.slice(-7);
-          const totalVolume = last7Days.reduce((sum, entry) => {
-            const vol = entry[5] || 0;
-            return sum + (Number.isFinite(vol) ? Number(vol) : 0);
-          }, 0);
-          
-          if (totalVolume > 0) {
-            const dailyVolume = totalVolume / 7;
-            let feesPerDay = dailyVolume * 0.0001; // 0.01% = 0.0001
-            feesPerDay *= 2; // 双倍手续费
-            // 格式化显示
-            if (Math.abs(feesPerDay) >= 1e9) {
-              estimatedFeesPerDay = (feesPerDay / 1e9).toFixed(2) + "B";
-            } else if (Math.abs(feesPerDay) >= 1e6) {
-              estimatedFeesPerDay = (feesPerDay / 1e6).toFixed(2) + "M";
-            } else if (Math.abs(feesPerDay) >= 1e3) {
-              estimatedFeesPerDay = (feesPerDay / 1e3).toFixed(2) + "K";
-            } else {
-              estimatedFeesPerDay = feesPerDay.toFixed(2);
-            }
-          } else {
-            estimatedFeesPerDay = "0";
-          }
+        // 计算相关系数
+        let correlationDisplay = "N/A";
+        const correlationResult = calculatePriceCorrelation(30);
+        if (correlationResult && !isNaN(correlationResult.correlation)) {
+          correlationDisplay = correlationResult.correlation.toFixed(4);
         }
         
-        // 更新 Estimated Fees Per Day 显示
-        const estimatedFeesEl = document.getElementById("estimatedFeesPerDayValue");
-        if (estimatedFeesEl) {
-          estimatedFeesEl.textContent = estimatedFeesPerDay;
+        // 更新相关系数显示
+        const correlationEl = document.getElementById("correlationValue");
+        if (correlationEl) {
+          correlationEl.textContent = correlationDisplay;
         }
 
         // 使用存储的数据更新图表（显示当前选择的天数）
@@ -2294,9 +3084,14 @@
         
         // 设置价格比率切换功能
         setupPriceRatioToggle();
+        
+        // 更新HV按钮的显示状态
+        updateHvButtonsVisibility();
       } catch (e) {
         console.error(e);
         errorEl.textContent = e.message || String(e);
+        // 发生错误时隐藏HV按钮
+        updateHvButtonsVisibility();
       } finally {
         loadingEl.textContent = "";
       }
@@ -2489,9 +3284,421 @@
       checkBirdeyeKey();
     });
 
+    // ========= Historical Volatility Calculation =========
+
+    /**
+     * 计算历史波动率（日级别）
+     * @param {Array} prices - 价格数组（收盘价）
+     * @param {number} minDays - 最少需要的数据天数，默认30
+     * @returns {number|null} - 日波动率（百分比），如果数据不足返回null
+     */
+    function calculateHistoricalVolatility(prices, minDays = 30) {
+      // 过滤掉无效价格（null, undefined, 0, NaN）
+      const validPrices = prices.filter(p => 
+        p !== null && 
+        p !== undefined && 
+        !isNaN(Number(p)) && 
+        Number(p) > 0
+      );
+
+      if (validPrices.length < minDays) {
+        return null; // 数据不足
+      }
+
+      if (validPrices.length < 2) {
+        return null; // 至少需要2个价格点
+      }
+
+      // 计算对数收益率
+      const returns = [];
+      for (let i = 1; i < validPrices.length; i++) {
+        const prevPrice = Number(validPrices[i - 1]);
+        const currPrice = Number(validPrices[i]);
+        
+        if (prevPrice > 0 && currPrice > 0) {
+          const logReturn = Math.log(currPrice / prevPrice);
+          returns.push(logReturn);
+        }
+      }
+
+      if (returns.length === 0) {
+        return null;
+      }
+
+      // 计算均值
+      const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
+
+      // 计算方差（样本方差，使用 n-1）
+      const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / (returns.length - 1);
+
+      // 日波动率（标准差）
+      const dailyVolatility = Math.sqrt(variance);
+
+      // 转换为百分比
+      return dailyVolatility * 100;
+    }
+
+    /**
+     * 从存储的OHLCV数据中提取价格并计算历史波动率
+     * @param {string} token - 'token0' 或 'token1' 或 'average'
+     * @param {number} lookbackDays - 回看天数，默认30
+     * @returns {Object|null} - {volatility: number, token: string, days: number, prices: number} 或 null
+     */
+    function calculateHvFromStoredData(token = 'token0', lookbackDays = 30) {
+      if (!storedOhlcvData || storedOhlcvData.length === 0) {
+        return null;
+      }
+
+      // 提取最近N天的数据
+      const recentData = storedOhlcvData.slice(-lookbackDays);
+      
+      let prices = [];
+      
+      if (token === 'token0') {
+        // token0 的收盘价在索引4
+        prices = recentData.map(entry => entry[4]); // close0
+      } else if (token === 'token1') {
+        // token1 的收盘价在索引11
+        prices = recentData.map(entry => entry[11]); // close1
+      } else if (token === 'average') {
+        // 计算两者的平均值
+        prices = recentData.map(entry => {
+          const close0 = entry[4];
+          const close1 = entry[11];
+          if (close0 !== null && close1 !== null && 
+              !isNaN(Number(close0)) && !isNaN(Number(close1)) &&
+              Number(close0) > 0 && Number(close1) > 0) {
+            return (Number(close0) + Number(close1)) / 2;
+          }
+          return null;
+        });
+      } else {
+        return null;
+      }
+
+      // 计算波动率，最少需要10个有效价格点
+      const minPrices = Math.min(10, Math.floor(lookbackDays * 0.5));
+      const volatility = calculateHistoricalVolatility(prices, minPrices);
+      
+      if (volatility === null) {
+        return null;
+      }
+
+      const validPricesCount = prices.filter(p => p !== null && !isNaN(Number(p)) && Number(p) > 0).length;
+
+      return {
+        volatility: volatility,
+        token: token,
+        days: recentData.length,
+        prices: validPricesCount
+      };
+    }
+
+    /**
+     * 更新HV按钮的显示状态
+     * 根据k线数据的可用性动态显示/隐藏按钮
+     */
+    function updateHvButtonsVisibility() {
+      const calcHvBtn0 = document.getElementById("calcHvBtn0");
+      const calcHvBtn1 = document.getElementById("calcHvBtn1");
+      const calcRatioVolBtn = document.getElementById("calcRatioVolBtn");
+      
+      if (!calcHvBtn0 || !calcHvBtn1) {
+        return;
+      }
+
+      // 检查是否有K线数据
+      if (!storedOhlcvData || storedOhlcvData.length === 0) {
+        calcHvBtn0.style.display = "none";
+        calcHvBtn1.style.display = "none";
+        if (calcRatioVolBtn) calcRatioVolBtn.style.display = "none";
+        return;
+      }
+
+      // 检查token0是否有足够的数据
+      const hvResult0 = calculateHvFromStoredData('token0', 30);
+      if (hvResult0) {
+        const token0Name = currentBaseSymbol || 'Token0';
+        calcHvBtn0.textContent = `${token0Name} HV`;
+        calcHvBtn0.style.display = "inline-block";
+      } else {
+        calcHvBtn0.style.display = "none";
+      }
+
+      // 检查token1是否有足够的数据
+      const hvResult1 = calculateHvFromStoredData('token1', 30);
+      if (hvResult1) {
+        const token1Name = currentQuoteSymbol || 'Token1';
+        calcHvBtn1.textContent = `${token1Name} HV`;
+        calcHvBtn1.style.display = "inline-block";
+      } else {
+        calcHvBtn1.style.display = "none";
+      }
+
+      // 检查是否可以计算价格比率波动率（需要token0、token1的HV和相关系数）
+      if (calcRatioVolBtn) {
+        const correlationResult = calculatePriceCorrelation(30);
+        if (hvResult0 && hvResult1 && correlationResult && !isNaN(correlationResult.correlation)) {
+          calcRatioVolBtn.style.display = "inline-block";
+        } else {
+          calcRatioVolBtn.style.display = "none";
+        }
+      }
+    }
+
+    /**
+     * 计算并填入指定token的历史波动率
+     * @param {string} token - 'token0' 或 'token1'
+     */
+    function calculateAndFillHv(token) {
+      const hvInfoEl = document.getElementById("hvInfo");
+      const sigmaDailyEl = document.getElementById("ilSigmaDaily");
+      const calcHvBtn0 = document.getElementById("calcHvBtn0");
+      const calcHvBtn1 = document.getElementById("calcHvBtn1");
+      const calcHvBtn = token === 'token0' ? calcHvBtn0 : calcHvBtn1;
+      
+      if (!hvInfoEl || !sigmaDailyEl) {
+        return;
+      }
+
+      // 检查是否有K线数据
+      if (!storedOhlcvData || storedOhlcvData.length === 0) {
+        hvInfoEl.textContent = t('noPriceDataAvailable');
+        hvInfoEl.style.color = "var(--danger)";
+        return;
+      }
+
+      // 显示计算中状态
+      if (calcHvBtn) {
+        const originalText = calcHvBtn.textContent;
+        calcHvBtn.textContent = "⏳";
+        calcHvBtn.disabled = true;
+      }
+      hvInfoEl.textContent = t('calculating');
+      hvInfoEl.style.color = "var(--text-muted)";
+
+      // 使用setTimeout让UI有时间更新
+      setTimeout(() => {
+        const hvResult = calculateHvFromStoredData(token, 30);
+        const tokenName = token === 'token0' 
+          ? (currentBaseSymbol || 'Token0')
+          : (currentQuoteSymbol || 'Token1');
+
+        // 恢复按钮状态
+        if (calcHvBtn) {
+          calcHvBtn.textContent = `${tokenName} HV`;
+          calcHvBtn.disabled = false;
+        }
+
+        if (!hvResult) {
+          hvInfoEl.textContent = t('insufficientPriceData', { tokenName: tokenName });
+          hvInfoEl.style.color = "var(--danger)";
+          return;
+        }
+
+        // 填入波动率
+        sigmaDailyEl.value = hvResult.volatility.toFixed(2);
+        
+        // 显示信息
+        hvInfoEl.textContent = `HV: ${hvResult.volatility.toFixed(2)}% (${tokenName}, ${hvResult.days}d, ${hvResult.prices} prices)`;
+        hvInfoEl.style.color = "var(--accent)";
+        
+        // 触发input事件，确保UI更新
+        sigmaDailyEl.dispatchEvent(new Event('input', { bubbles: true }));
+      }, 10);
+    }
+
+    /**
+     * 计算价格比率的日波动率并填入输入框
+     * 公式: σ_ratio = √(σ₀² + σ₁² - 2ρ × σ₀ × σ₁)
+     */
+    function calculateAndFillRatioVolatility() {
+      const hvInfoEl = document.getElementById("hvInfo");
+      const sigmaDailyEl = document.getElementById("ilSigmaDaily");
+      const calcRatioVolBtn = document.getElementById("calcRatioVolBtn");
+      
+      if (!hvInfoEl || !sigmaDailyEl) {
+        return;
+      }
+
+      // 检查是否有K线数据
+      if (!storedOhlcvData || storedOhlcvData.length === 0) {
+        hvInfoEl.textContent = t('noPriceDataAvailable');
+        hvInfoEl.style.color = "var(--danger)";
+        return;
+      }
+
+      // 显示计算中状态
+      if (calcRatioVolBtn) {
+        calcRatioVolBtn.textContent = "⏳";
+        calcRatioVolBtn.disabled = true;
+      }
+      hvInfoEl.textContent = t('calculatingRatioVolatility');
+      hvInfoEl.style.color = "var(--text-muted)";
+
+      // 使用setTimeout让UI有时间更新
+      setTimeout(() => {
+        // 获取token0和token1的波动率
+        const hvResult0 = calculateHvFromStoredData('token0', 30);
+        const hvResult1 = calculateHvFromStoredData('token1', 30);
+        const correlationResult = calculatePriceCorrelation(30);
+
+        // 恢复按钮状态
+        if (calcRatioVolBtn) {
+          const ratioVolText = document.getElementById('ratioVolatilityBtnText');
+          if (ratioVolText) {
+            ratioVolText.textContent = t('ratioVolatility');
+          } else {
+            calcRatioVolBtn.textContent = t('ratioVolatility');
+          }
+          calcRatioVolBtn.disabled = false;
+        }
+
+        // 检查数据是否足够
+        if (!hvResult0 || !hvResult1) {
+          hvInfoEl.textContent = t('needBothVolatilities');
+          hvInfoEl.style.color = "var(--danger)";
+          return;
+        }
+
+        if (!correlationResult || isNaN(correlationResult.correlation)) {
+          hvInfoEl.textContent = t('cannotCalculateCorrelation');
+          hvInfoEl.style.color = "var(--danger)";
+          return;
+        }
+
+        // 转换为小数形式（从百分比）
+        const sigma0 = hvResult0.volatility / 100;
+        const sigma1 = hvResult1.volatility / 100;
+        const rho = correlationResult.correlation;
+
+        // 计算价格比率波动率: σ_ratio = √(σ₀² + σ₁² - 2ρ × σ₀ × σ₁)
+        const sigmaRatioSquared = sigma0 * sigma0 + sigma1 * sigma1 - 2 * rho * sigma0 * sigma1;
+        
+        if (sigmaRatioSquared < 0) {
+          hvInfoEl.textContent = t('invalidVolatilityCalculation');
+          hvInfoEl.style.color = "var(--danger)";
+          return;
+        }
+
+        const sigmaRatio = Math.sqrt(sigmaRatioSquared);
+        const sigmaRatioPercent = sigmaRatio * 100;
+
+        // 填入波动率
+        sigmaDailyEl.value = sigmaRatioPercent.toFixed(2);
+        
+        // 显示信息
+        const token0Name = currentBaseSymbol || 'Token0';
+        const token1Name = currentQuoteSymbol || 'Token1';
+        hvInfoEl.textContent = `Ratio Vol: ${sigmaRatioPercent.toFixed(2)}% (σ₀=${hvResult0.volatility.toFixed(2)}%, σ₁=${hvResult1.volatility.toFixed(2)}%, ρ=${rho.toFixed(3)})`;
+        hvInfoEl.style.color = "var(--accent)";
+        
+        // 触发input事件，确保UI更新
+        sigmaDailyEl.dispatchEvent(new Event('input', { bubbles: true }));
+      }, 10);
+    }
+
+    // ========= Correlation Coefficient Calculation =========
+
+    /**
+     * 计算两个代币价格的对数收益率的相关系数
+     * @param {number} lookbackDays - 回看天数，默认30
+     * @returns {Object|null} - {correlation: number, days: number, validPairs: number} 或 null
+     */
+    function calculatePriceCorrelation(lookbackDays = 30) {
+      if (!storedOhlcvData || storedOhlcvData.length === 0) {
+        return null;
+      }
+
+      // 提取最近N天的数据
+      const recentData = storedOhlcvData.slice(-lookbackDays);
+      
+      // 提取token0和token1的收盘价
+      const prices0 = [];
+      const prices1 = [];
+      
+      for (const entry of recentData) {
+        const close0 = entry[4];  // token0收盘价
+        const close1 = entry[11]; // token1收盘价
+        
+        if (close0 !== null && close1 !== null && 
+            !isNaN(Number(close0)) && !isNaN(Number(close1)) &&
+            Number(close0) > 0 && Number(close1) > 0) {
+          prices0.push(Number(close0));
+          prices1.push(Number(close1));
+        }
+      }
+
+      if (prices0.length < 2 || prices1.length < 2) {
+        return null; // 至少需要2个价格点来计算收益率
+      }
+
+      // 计算对数收益率
+      const returns0 = [];
+      const returns1 = [];
+      
+      for (let i = 1; i < prices0.length; i++) {
+        const prev0 = prices0[i - 1];
+        const curr0 = prices0[i];
+        const prev1 = prices1[i - 1];
+        const curr1 = prices1[i];
+        
+        if (prev0 > 0 && curr0 > 0 && prev1 > 0 && curr1 > 0) {
+          returns0.push(Math.log(curr0 / prev0));
+          returns1.push(Math.log(curr1 / prev1));
+        }
+      }
+
+      if (returns0.length < 2) {
+        return null; // 至少需要2个收益率点
+      }
+
+      // 计算均值
+      const mean0 = returns0.reduce((a, b) => a + b, 0) / returns0.length;
+      const mean1 = returns1.reduce((a, b) => a + b, 0) / returns1.length;
+
+      // 计算协方差和方差
+      let covariance = 0;
+      let variance0 = 0;
+      let variance1 = 0;
+
+      for (let i = 0; i < returns0.length; i++) {
+        const diff0 = returns0[i] - mean0;
+        const diff1 = returns1[i] - mean1;
+        covariance += diff0 * diff1;
+        variance0 += diff0 * diff0;
+        variance1 += diff1 * diff1;
+      }
+
+      // 使用样本方差（n-1）
+      const n = returns0.length;
+      covariance = covariance / (n - 1);
+      variance0 = variance0 / (n - 1);
+      variance1 = variance1 / (n - 1);
+
+      const std0 = Math.sqrt(variance0);
+      const std1 = Math.sqrt(variance1);
+
+      // 计算相关系数
+      if (std0 === 0 || std1 === 0) {
+        return null; // 标准差为0，无法计算相关系数
+      }
+
+      const correlation = covariance / (std0 * std1);
+
+      return {
+        correlation: correlation,
+        days: recentData.length,
+        validPairs: returns0.length
+      };
+    }
+
     // ========= Impermanent Loss Monte Carlo Simulator =========
 
     let ilChartInstance = null;
+    let monteCarloPathChartInstance = null;
+    let monteCarloAxisMode = 'price'; // 'price' or 'percentage'
+    let monteCarloCurrentPrice = null; // Store current price for percentage calculation
 
     function randnBoxMuller() {
       let u = 0;
@@ -2586,6 +3793,193 @@
       });
     }
 
+    function buildMonteCarloPathChart(dayLabels, pathPricesArray, currentPrice, sigmaDailyPct, days, Pl, Pu) {
+      const ctx = document.getElementById("monteCarloPathChart");
+      if (!ctx) return;
+      
+      const chartCtx = ctx.getContext("2d");
+      if (monteCarloPathChartInstance) {
+        monteCarloPathChartInstance.destroy();
+      }
+
+      // Store current price for percentage calculation
+      monteCarloCurrentPrice = currentPrice;
+
+      // Helper function to transform data based on mode
+      const transformData = (price) => {
+        if (monteCarloAxisMode === 'percentage') {
+          return ((price / currentPrice - 1) * 100);
+        }
+        return price;
+      };
+
+      // 创建多个数据集，每个路径一条折线
+      const datasets = pathPricesArray.map((prices, index) => ({
+        label: `${t('pricePath')} ${index + 1}`,
+        data: prices.map(transformData),
+        borderColor: "rgba(73, 229, 94, 0.75)",
+        backgroundColor: "rgba(73, 229, 94, 0.1)",
+        borderWidth: 1.5,
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        tension: 0.1,
+        fill: false
+      }));
+
+      // 添加LP range价格下限和上限的横线
+      if (Pl && Pu && Number.isFinite(Pl) && Number.isFinite(Pu)) {
+        // LP range 价格下限横线
+        datasets.push({
+          label: t('lpRange'),
+          data: new Array(dayLabels.length).fill(transformData(Pl)),
+          borderColor: "rgba(168, 85, 247, 0.5)", // 亮紫色，50%透明度
+          backgroundColor: "transparent",
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 0,
+          tension: 0,
+          fill: false
+        });
+
+        // LP range 价格上限横线
+        datasets.push({
+          label: t('lpRange'),
+          data: new Array(dayLabels.length).fill(transformData(Pu)),
+          borderColor: "rgba(168, 85, 247, 0.5)", // 亮紫色，50%透明度
+          backgroundColor: "transparent",
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 0,
+          tension: 0,
+          fill: false
+        });
+      }
+
+      monteCarloPathChartInstance = new Chart(chartCtx, {
+        type: "line",
+        data: {
+          labels: dayLabels,
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            intersect: false,
+            mode: 'index'
+          },
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              enabled: false
+            }
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: t('daysAxisLabel'),
+                color: "rgba(148, 163, 184, 0.9)",
+                font: { size: 11 }
+              },
+              ticks: {
+                color: "rgba(148, 163, 184, 0.9)",
+                font: { size: 10 }
+              },
+              grid: {
+                color: "rgba(148, 163, 184, 0.1)"
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: monteCarloAxisMode === 'percentage' ? t('percentageLabel') : t('priceLabel'),
+                color: "rgba(148, 163, 184, 0.9)",
+                font: { size: 11 }
+              },
+              ticks: {
+                color: "rgba(148, 163, 184, 0.9)",
+                font: { size: 10 },
+                callback: function(value) {
+                  if (monteCarloAxisMode === 'percentage') {
+                    return value.toFixed(2) + '%';
+                  }
+                  return value.toFixed(2);
+                }
+              },
+              grid: {
+                color: "rgba(148, 163, 184, 0.15)"
+              }
+            }
+          },
+          onClick: function(event, elements) {
+            // Check if click is on Y-axis area (left 60px of chart)
+            const chartArea = this.chartArea;
+            if (chartArea && event.x < chartArea.left + 60) {
+              toggleMonteCarloAxisMode();
+            }
+          }
+        }
+      });
+    }
+
+    function toggleMonteCarloAxisMode() {
+      monteCarloAxisMode = monteCarloAxisMode === 'price' ? 'percentage' : 'price';
+      
+      // Update toggle button text
+      const toggleText = document.getElementById('monteCarloAxisToggleText');
+      if (toggleText) {
+        toggleText.textContent = monteCarloAxisMode === 'price' ? t('priceLabel') : t('percentageLabel');
+      }
+      
+      // Rebuild chart if it exists
+      if (monteCarloPathChartInstance && monteCarloCurrentPrice) {
+        // Rebuild chart with stored data
+        if (window.monteCarloPathData) {
+          const { dayLabels, pathPricesArray, currentPrice, sigmaDailyPct, days, Pl, Pu } = window.monteCarloPathData;
+          buildMonteCarloPathChart(dayLabels, pathPricesArray, currentPrice, sigmaDailyPct, days, Pl, Pu);
+        }
+      }
+    }
+
+    // 设置 Price lower bound 的函数
+    function setLowerBound(percentage) {
+      const p0El = document.getElementById("ilP0");
+      const lowerEl = document.getElementById("ilLower");
+      
+      if (!p0El || !lowerEl) return;
+      
+      const currentPrice = parseFloat(p0El.value);
+      if (isNaN(currentPrice) || currentPrice <= 0) {
+        return; // Current price 为空或无效，不执行操作
+      }
+      
+      // 计算 lower bound: currentPrice * (1 + percentage/100)
+      // percentage 是负数，例如 -0.05 表示 -0.05%
+      const lowerBound = currentPrice * (1 + percentage / 100);
+      lowerEl.value = lowerBound.toFixed(4);
+    }
+
+    // 设置 Price upper bound 的函数
+    function setUpperBound(percentage) {
+      const p0El = document.getElementById("ilP0");
+      const upperEl = document.getElementById("ilUpper");
+      
+      if (!p0El || !upperEl) return;
+      
+      const currentPrice = parseFloat(p0El.value);
+      if (isNaN(currentPrice) || currentPrice <= 0) {
+        return; // Current price 为空或无效，不执行操作
+      }
+      
+      // 计算 upper bound: currentPrice * (1 + percentage/100)
+      // percentage 是正数，例如 0.05 表示 +0.05%
+      const upperBound = currentPrice * (1 + percentage / 100);
+      upperEl.value = upperBound.toFixed(4);
+    }
+
     function runIlSimulation() {
       const lowerEl = document.getElementById("ilLower");
       const upperEl = document.getElementById("ilUpper");
@@ -2603,7 +3997,7 @@
       const feeBreakEvenEl = document.getElementById("ilFeeBreakEven");
 
       errorEl.textContent = "";
-      statusEl.textContent = "Running Monte Carlo simulation...";
+      statusEl.textContent = t('runningSimulation');
       expectedEl.textContent = "–";
       ciEl.textContent = "–";
       stdEl.textContent = "–";
@@ -2618,32 +4012,44 @@
       let paths = Number(pathsEl.value);
 
       if (!Number.isFinite(Pl) || !Number.isFinite(Pu) || !Number.isFinite(P0)) {
-        errorEl.textContent = "请填写有效的价格，包含区间下界、上界和当前价格。";
+        errorEl.textContent = t('invalidPriceInput');
         statusEl.textContent = "";
         return;
       }
       if (Pl <= 0 || Pu <= 0 || P0 <= 0) {
-        errorEl.textContent = "价格必须大于 0。";
+        errorEl.textContent = t('priceMustBePositive');
         statusEl.textContent = "";
         return;
       }
       if (Pl >= Pu) {
-        errorEl.textContent = "区间下界必须小于上界。";
+        errorEl.textContent = t('lowerBoundMustBeLess');
         statusEl.textContent = "";
         return;
       }
       if (!Number.isFinite(sigmaDailyPct) || sigmaDailyPct <= 0) {
-        errorEl.textContent = "请填写有效的日波动率（百分比）。";
+        errorEl.textContent = t('invalidVolatility');
         statusEl.textContent = "";
         return;
       }
       if (!Number.isFinite(days) || days <= 0) {
-        errorEl.textContent = "预测天数必须为正整数。";
+        errorEl.textContent = t('daysMustBePositive');
+        statusEl.textContent = "";
+        return;
+      }
+      // 模拟天数上限为3650
+      if (days > 3650) {
+        errorEl.textContent = t('daysExceedsLimit');
         statusEl.textContent = "";
         return;
       }
       if (!Number.isFinite(paths) || paths < 100) {
         paths = 1000;
+      }
+      // 模拟次数上限为1000000，超过则报错
+      if (paths > 1000000) {
+        errorEl.textContent = t('pathsExceedsLimit');
+        statusEl.textContent = "";
+        return;
       }
 
       const sigmaDaily = sigmaDailyPct / 100;
@@ -2655,24 +4061,63 @@
       const y0 = xy0.y;
 
       const ils = new Array(paths);
+      // 计算要展示的路径数量：模拟次数^(1/3)，向下取整，上限为100
+      const pathsToShow = Math.min(Math.floor(Math.pow(paths, 1/3)), 100);
+      // 展示天数上限为365
+      const daysToShow = Math.min(days, 365);
+      const pathPricesArray = []; // 存储多条路径的每日价格
 
       for (let i = 0; i < paths; i++) {
-        const z = randnBoxMuller();
-        const logPT =
-          Math.log(P0) +
-          (-0.5 * sigmaDaily * sigmaDaily) * T +
-          sigmaDaily * Math.sqrt(T) * z;
-        const PT = Math.exp(logPT);
+        // 对于前pathsToShow条路径，记录每日价格
+        if (i < pathsToShow) {
+          const pathPrices = [P0]; // 从当前价格开始
+          let currentPrice = P0;
+          
+          // 逐日计算价格变化，完整计算所有天数用于IL计算，但只记录前365天用于展示
+          for (let day = 1; day <= days; day++) {
+            const z = randnBoxMuller();
+            const logP = Math.log(currentPrice) +
+              (-0.5 * sigmaDaily * sigmaDaily) * 1 + // 每天的时间步长为1
+              sigmaDaily * Math.sqrt(1) * z;
+            currentPrice = Math.exp(logP);
+            // 只记录前365天的数据用于图表展示
+            if (day <= daysToShow) {
+              pathPrices.push(currentPrice);
+            }
+          }
+          
+          pathPricesArray.push(pathPrices);
+          
+          // 使用最后一次的价格（完整模拟天数后的价格）计算IL
+          const PT = currentPrice;
+          const xyT = uniswapV3XYForPrice(PT, Pl, Pu, L);
+          const xT = xyT.x;
+          const yT = xyT.y;
 
-        const xyT = uniswapV3XYForPrice(PT, Pl, Pu, L);
-        const xT = xyT.x;
-        const yT = xyT.y;
+          const vHodl = x0 * PT + y0;
+          const vLp = xT * PT + yT;
 
-        const vHodl = x0 * PT + y0;
-        const vLp = xT * PT + yT;
+          const il = vLp / vHodl - 1;
+          ils[i] = il;
+        } else {
+          // 其他模拟路径，直接计算最终价格（保持原有逻辑）
+          const z = randnBoxMuller();
+          const logPT =
+            Math.log(P0) +
+            (-0.5 * sigmaDaily * sigmaDaily) * T +
+            sigmaDaily * Math.sqrt(T) * z;
+          const PT = Math.exp(logPT);
 
-        const il = vLp / vHodl - 1;
-        ils[i] = il;
+          const xyT = uniswapV3XYForPrice(PT, Pl, Pu, L);
+          const xT = xyT.x;
+          const yT = xyT.y;
+
+          const vHodl = x0 * PT + y0;
+          const vLp = xT * PT + yT;
+
+          const il = vLp / vHodl - 1;
+          ils[i] = il;
+        }
       }
 
       ils.sort((a, b) => a - b);
@@ -2743,13 +4188,84 @@
 
       buildIlDistributionChart(labels, counts);
 
-      statusEl.textContent = `Done. Simulated ${paths} paths over ${days} days (σ₍daily₎ = ${sigmaDailyPct}%).`;
+      // 绘制多条模拟路径的价格路径图
+      if (pathPricesArray && pathPricesArray.length > 0) {
+        const daysToShow = Math.min(days, 365);
+        const dayLabels = Array.from({ length: daysToShow + 1 }, (_, i) => i.toString());
+        // 确保每条路径数据只包含前365天的数据
+        const trimmedPathPricesArray = pathPricesArray.map(prices => 
+          prices.slice(0, daysToShow + 1)
+        );
+        // Store data for toggle functionality
+        window.monteCarloPathData = {
+          dayLabels,
+          pathPricesArray: trimmedPathPricesArray,
+          currentPrice: P0,
+          sigmaDailyPct,
+          days: daysToShow,
+          Pl,
+          Pu
+        };
+        buildMonteCarloPathChart(dayLabels, trimmedPathPricesArray, P0, sigmaDailyPct, daysToShow, Pl, Pu);
+      }
+
+      statusEl.textContent = t('simulationDone', { paths, days, sigma: sigmaDailyPct });
     }
 
     const runIlBtn = document.getElementById("runIlBtn");
     if (runIlBtn) {
       runIlBtn.addEventListener("click", runIlSimulation);
     }
+
+    // Monte Carlo axis toggle button
+    const monteCarloAxisToggle = document.getElementById("monteCarloAxisToggle");
+    if (monteCarloAxisToggle) {
+      monteCarloAxisToggle.addEventListener("click", toggleMonteCarloAxisMode);
+    }
+
+    // 历史波动率计算按钮事件
+    const calcHvBtn0 = document.getElementById("calcHvBtn0");
+    if (calcHvBtn0) {
+      calcHvBtn0.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        calculateAndFillHv('token0');
+      });
+    }
+
+    const calcHvBtn1 = document.getElementById("calcHvBtn1");
+    if (calcHvBtn1) {
+      calcHvBtn1.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        calculateAndFillHv('token1');
+      });
+    }
+
+    const calcRatioVolBtn = document.getElementById("calcRatioVolBtn");
+    if (calcRatioVolBtn) {
+      calcRatioVolBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        calculateAndFillRatioVolatility();
+      });
+    }
+
+    // 天数快速选择按钮事件
+    const daysQuickBtns = document.querySelectorAll(".days-quick-btn");
+    daysQuickBtns.forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const days = parseInt(btn.getAttribute("data-days"));
+        const daysEl = document.getElementById("ilDays");
+        if (daysEl && !isNaN(days) && days > 0) {
+          daysEl.value = days;
+          // 触发input事件，确保UI更新
+          daysEl.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      });
+    });
 
     // 初始情况下就运行模拟，使用默认参数
     window.addEventListener("load", () => {

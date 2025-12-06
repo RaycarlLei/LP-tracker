@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-  <title>Is a Liquidity Pool Worth Investing In? - Solana 流动性池追踪工具</title>
+  <title>Liquidity Pool ToolBox Solana流动性池助手</title>
   <!-- Chart.js for charts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -410,6 +410,47 @@
       word-break: break-all;
     }
 
+    .stat.dex-clickable {
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease, box-shadow 0.3s ease;
+      user-select: none;
+    }
+
+    .stat.dex-clickable::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .stat.dex-clickable:hover::before {
+      left: 100%;
+    }
+
+    .stat.dex-clickable:hover {
+      transform: translateY(-1px);
+      box-shadow: 
+        0 8px 28px rgba(59, 130, 246, 0.4),
+        0 0 0 1px rgba(148, 163, 184, 0.26) !important;
+      background: radial-gradient(circle at top left, rgba(34, 197, 94, 0.06), transparent 55%) !important;
+      border-color: rgba(148, 163, 184, 0.26) !important;
+    }
+
+    .stat.dex-clickable:active {
+      transform: translateY(0);
+      box-shadow: 
+        0 4px 16px rgba(59, 130, 246, 0.25),
+        0 0 0 1px rgba(148, 163, 184, 0.26) !important;
+      background: radial-gradient(circle at top left, rgba(34, 197, 94, 0.06), transparent 55%) !important;
+      border-color: rgba(148, 163, 184, 0.26) !important;
+    }
+
     .clickable-stat {
       cursor: pointer;
       transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
@@ -425,6 +466,27 @@
     .clickable-stat:active {
       transform: translateY(0);
       background: radial-gradient(circle at top left, rgba(34, 197, 94, 0.08), transparent 55%);
+    }
+
+    .glow-green {
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.5), 0 0 40px rgba(34, 197, 94, 0.3), 0 0 60px rgba(34, 197, 94, 0.15);
+      border-color: rgba(34, 197, 94, 0.6) !important;
+      background: radial-gradient(circle at top left, rgba(34, 197, 94, 0.15), transparent 55%) !important;
+    }
+
+    .glow-red {
+      box-shadow: 0 0 20px rgba(249, 115, 115, 0.5), 0 0 40px rgba(249, 115, 115, 0.3), 0 0 60px rgba(249, 115, 115, 0.15);
+      border-color: rgba(249, 115, 115, 0.6) !important;
+      background: radial-gradient(circle at top left, rgba(249, 115, 115, 0.15), transparent 55%) !important;
+    }
+
+    .clickable-stat[style*="border: none"]:hover {
+      background: radial-gradient(circle at top left, rgba(34, 197, 94, 0.08), transparent 55%);
+      border-color: transparent;
+    }
+
+    .clickable-stat[style*="border: none"]:active {
+      background: radial-gradient(circle at top left, rgba(34, 197, 94, 0.05), transparent 55%);
     }
 
     .swap-icon {
@@ -868,21 +930,17 @@
     <div id="results" class="card" style="display:none;">
       <div class="results-card-header">
         <div>
-          <div class="results-title" id="resultsTitle">Parsed Pool Data</div>
+          <div class="results-title" id="resultsTitle">Pool Data</div>
           <div class="muted-label" id="keyMetricsLabel">Key metrics</div>
         </div>
         <div class="muted-label" id="liveFromLabel">Live from GeckoTerminal</div>
       </div>
-      <div id="poolInfo"></div>
-
       <!-- chart area -->
       <div class="chart-container">
         <div class="muted-label">
           <span id="lastDaysLabel">Last</span> <span id="daysLabel">30</span> <span id="daysLabelSuffix">Days Liquidity & Volume</span>
         </div>
-        <div class="small" id="tvlLineNote">
-          TVL line uses current liquidity as an approximate level, daily volume from OHLCV candles.
-        </div>
+
 
         <div class="range-control">
           <div class="range-meta">
@@ -929,6 +987,7 @@
           </div>
         </div>
       </div>
+      <div id="poolInfo"></div>
 
       <div class="collapsible-section" style="margin-top: 14px;">
         <div class="collapsible-header" onclick="toggleCollapsible('rawJsonSection')">
@@ -949,6 +1008,60 @@
         </div>
         <div class="collapsible-content" id="birdeyeRawJsonSection" style="display: none;">
           <pre id="birdeyeRawJson"></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fee Prediction -->
+    <div class="card" id="feePredictionCard" style="display:none; margin-top: 20px;">
+      <div class="card-header">
+        <div>
+          <div class="card-title" id="feePredictionTitle">Fee Prediction</div>
+        </div>
+      </div>
+      <div class="card-content">
+        <div class="stat-grid" style="margin-bottom: 20px;">
+          <div class="stat">
+            <div class="stat-label" id="currentTvlLabel">Current TVL</div>
+            <div class="stat-value" id="currentTvlValue">N/A</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label" id="dailyVolume7dLabel">7-Day Daily Average Volume (USD)</div>
+            <div class="stat-value" id="dailyVolume7dValue">N/A</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label" id="dailyVolume7dStdDevLabel">7-Day Volume Std Dev (USD)</div>
+            <div class="stat-value" id="dailyVolume7dStdDevValue">N/A</div>
+          </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label for="feePercentageInput" style="display: block; margin-bottom: 8px; font-weight: 500;">
+            <span id="feePercentageLabel">Fee Percentage (%)</span>
+          </label>
+          <input
+            type="number"
+            id="feePercentageInput"
+            step="0.01"
+            min="0"
+            max="100"
+            value="0.01"
+            placeholder="e.g. 0.3 for 0.3%"
+            style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
+          />
+          <div id="pancakeswapFeeNote" style="display: none; margin-top: 6px; font-size: 11px; color: var(--text-muted); line-height: 1.4;">
+            <span id="pancakeswapFeeNoteText"></span>
+            <a href="https://docs.pancakeswap.finance/earn/pancakeswap-pools" target="_blank" id="pancakeswapFeeNoteLink" style="color: rgba(59, 130, 246, 0.9); text-decoration: underline; cursor: pointer; opacity: 0.9; margin-left: 4px;"></a>
+          </div>
+        </div>
+        
+        <div class="stat clickable-stat" id="feeDisplayStat" style="border: none; background: transparent; margin-top: 10px;"
+             data-display-type="apr">
+          <div class="stat-label">
+            <span id="feeDisplayLabel">Fee APR</span>
+            <span class="swap-icon" id="feeSwapIcon">⇄</span>
+          </div>
+          <div class="stat-value" id="feeDisplayValue" style="font-size: 24px; font-weight: bold; color: #4CAF50;">-</div>
         </div>
       </div>
     </div>
@@ -1114,6 +1227,18 @@
         </div>
         <div class="stat">
           <div class="stat-label">
+            <span id="feeAprInputLabel">Fee APR (%)</span>
+          </div>
+          <input
+            id="ilFeeApr"
+            type="number"
+            step="0.01"
+            placeholder="e.g. 15.5 means 15.5%"
+            value=""
+          />
+        </div>
+        <div class="stat">
+          <div class="stat-label">
             <span>simulation days</span>
           </div>
           <input
@@ -1190,6 +1315,10 @@
             <div class="stat-value" id="ilExpected">–</div>
           </div>
           <div class="stat">
+            <div class="stat-label" id="dailyILLabel">Daily IL</div>
+            <div class="stat-value" id="ilDaily">–</div>
+          </div>
+          <div class="stat">
             <div class="stat-label" id="equivalentILAprLabel">Equivalent IL APR</div>
             <div class="stat-value" id="ilApr">–</div>
           </div>
@@ -1198,11 +1327,27 @@
             <div class="stat-value" id="ilFeeBreakEven">–</div>
           </div>
           <div class="stat">
+            <div class="stat-label" id="correlationLabel">Volume-IL Correlation (cov)</div>
+            <div class="stat-value" id="volumeIlCorrelation">–</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label" id="totalReturnStdLabel">Total Return Std. Dev. (Annualized)</div>
+            <div class="stat-value" id="totalReturnStd">–</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label" id="sharpeRatioLabel">Sharpe Ratio</div>
+            <div class="stat-value" id="sharpeRatio">–</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label" id="worstCaseMddLabel">95% Worst-Case MDD</div>
+            <div class="stat-value" id="worstCaseMdd">–</div>
+          </div>
+          <div class="stat">
             <div class="stat-label" id="ilIntervalLabel">5% – 95% IL interval</div>
             <div class="stat-value" id="ilCI">–</div>
           </div>
           <div class="stat">
-            <div class="stat-label" id="stdDeviationILLabel">Std. deviation of IL</div>
+            <div class="stat-label" id="stdDeviationILLabel">IL Std. Dev. (Total)</div>
             <div class="stat-value" id="ilStd">–</div>
           </div>
         </div>
@@ -1257,12 +1402,13 @@
   <script>
     const API_BASE = "https://api.geckoterminal.com/api/v2";
     const BIRDEYE_BASE = "https://public-api.birdeye.so";
+    const SOLANA_RPC = "https://api.mainnet-beta.solana.com";
 
     // Language system
     const translations = {
       en: {
         // Page header
-        title: "Is a Liquidity Pool Worth Investing In?",
+        title: "Is Your Liquidity Pool Worth Investing In?",
         tagline: "Live Pool Metrics and Impermanent Loss Calculator",
         // Pool ID section
         poolId: "Pool ID",
@@ -1274,7 +1420,7 @@
         checkKey: "Check Key",
         defaultApiKeyNote: "Default uses built-in API Key. To use your own Key, please click the button above.",
         // Results section
-        parsedPoolData: "Parsed Pool Data",
+        parsedPoolData: "Pool Data",
         keyMetrics: "Key metrics",
         liveFromGeckoTerminal: "Live from GeckoTerminal",
         lastDaysLiquidity: "Last {days} Days Liquidity & Volume",
@@ -1286,6 +1432,7 @@
         rawBirdeyeDesc: "Full JSON payload from Birdeye OHLCV API (if available).",
         // Chart labels
         tvlUsd: "TVL (USD)",
+        tvl: "TVL",
         dailyVolumeUsd: "Daily Volume (USD)",
         highPrice: "High Price",
         lowPrice: "Low Price",
@@ -1301,6 +1448,8 @@
         currentPricePlaceholder: "e.g. 130",
         dailyVolatility: "Daily volatility (percent)",
         dailyVolatilityPlaceholder: "e.g. 7.26 means 7.26%",
+        feeAprInput: "Fee APR (%)",
+        feeAprInputPlaceholder: "e.g. 15.5 means 15.5%",
         simulationDays: "simulation days",
         simulationDaysPlaceholder: "Forecast days, e.g. 30",
         numberOfPaths: "Number of simulations",
@@ -1309,10 +1458,15 @@
         runningSimulation: "Running Monte Carlo simulation...",
         simulationResults: "Simulation results",
         expectedIL: "Expected IL",
+        dailyIL: "Daily IL",
         equivalentILApr: "Equivalent IL APR",
-        feeBreakEvenApr: "Fee Break-even APR",
+        feeBreakEvenApr: "Net APR",
+        volumeIlCorrelation: "Volume-IL Correlation (cov)",
+        totalReturnStdDev: "Total Return Std. Dev. (Annualized)",
+        sharpeRatio: "Sharpe Ratio",
+        worstCaseMdd: "95% Worst-Case MDD",
         ilInterval: "5% – 95% IL interval",
-        stdDeviationIL: "Std. deviation of IL",
+        stdDeviationIL: "IL Std. Dev. (Total)",
         ilDistribution: "IL distribution (percent)",
         ilDistributionDesc: "Based on IL samples obtained from Monte Carlo simulation, bin the results and plot as a frequency histogram.",
         frequencyOfSimulatedIL: "Frequency of simulated IL",
@@ -1332,11 +1486,25 @@
         pair: "Pair",
         poolIdLpId: "Pool ID (LP ID)",
         priceUsd: "{symbol} Price (USD)",
-        volume7d: "7-Day Daily Average (USD)",
+        token0Amount: "{symbol} Amount",
+        token1Amount: "{symbol} Amount",
+        volume7d: "7-Day Daily Average Volume (USD)",
         marketCap: "Market Cap (USD)",
         correlationCoefficient: "Correlation Coefficient (ρ)",
         lastUpdated: "Last Updated",
         calculating: "Calculating...",
+        // Fee Prediction
+        feePrediction: "Fee Prediction",
+        currentTvl: "Current TVL",
+        dailyVolume7d: "7-Day Daily Average Volume (USD)",
+        dailyVolume7dStdDev: "7-Day Volume Std Dev (USD)",
+        feePercentage: "Fee Percentage (%)",
+        feePercentagePlaceholder: "e.g. 0.3 for 0.3%",
+        dailyFeeApr: "Daily Fee APR",
+        dailyFee: "Daily Fee (%)",
+        pancakeswapFeeNote: "On PancakeSwap platform, liquidity providers can only receive 84% of trading fee income, calculation values have been automatically adjusted.",
+        pancakeswapFeeNoteLink: "Click to view details",
+        calculateFeeApr: "Calculate Fee APR",
         // Loading messages
         loadingFromGeckoTerminal: "Loading from GeckoTerminal API...",
         loadingOhlcvData: "Loading 180 days of OHLCV data for both tokens...",
@@ -1382,14 +1550,15 @@
         keyMetrics: "关键指标",
         liveFromGeckoTerminal: "来自 GeckoTerminal 的实时数据",
         lastDaysLiquidity: "最近 {days} 天的流动性和交易量",
-        tvlLineNote: "TVL 线使用当前流动性作为近似水平，每日交易量来自 OHLCV 。",
-        lookbackWindow: "回看窗口",
+
+        lookbackWindow: "拖动滑块改变时间窗口",
         rawGeckoTerminalResponse: "原始 GeckoTerminal 响应",
         rawGeckoTerminalDesc: "来自 GeckoTerminal 池快照 API 的完整 JSON 。",
         rawBirdeyeResponse: "原始 Birdeye OHLCV 响应",
         rawBirdeyeDesc: "来自 Birdeye OHLCV API 的完整 JSON（如果可用）。",
         // Chart labels
         tvlUsd: "TVL (美元)",
+        tvl: "TVL",
         dailyVolumeUsd: "每日交易量 (美元)",
         highPrice: "最高价",
         lowPrice: "最低价",
@@ -1405,6 +1574,8 @@
         currentPricePlaceholder: "例如：130",
         dailyVolatility: "每日波动率 (百分比)",
         dailyVolatilityPlaceholder: "例如 7.26 表示 7.26%",
+        feeAprInput: "手续费年化收益率 (%)",
+        feeAprInputPlaceholder: "例如 15.5 表示 15.5%",
         simulationDays: "模拟天数",
         simulationDaysPlaceholder: "预测天数，例如 30",
         numberOfPaths: "模拟次数",
@@ -1413,8 +1584,13 @@
         runningSimulation: "正在运行蒙特卡洛模拟...",
         simulationResults: "模拟结果",
         expectedIL: "预期 IL",
+        dailyIL: "日均 IL",
         equivalentILApr: "等效 IL 年化",
-        feeBreakEvenApr: "盈亏平衡线",
+        feeBreakEvenApr: "净年化收益率",
+        volumeIlCorrelation: "交易量-IL 相关性 (cov)",
+        totalReturnStdDev: "总回报率APR标准差",
+        sharpeRatio: "夏普比率",
+        worstCaseMdd: "95% 最坏情况最大回撤",
         ilInterval: "5% – 95% IL 区间",
         stdDeviationIL: "IL 标准差",
         ilDistribution: "IL 分布 (百分比)",
@@ -1436,11 +1612,25 @@
         pair: "交易对",
         poolIdLpId: "流动性池ID (LP ID)",
         priceUsd: "{symbol} 价格 (美元)",
+        token0Amount: "{symbol} 数量",
+        token1Amount: "{symbol} 数量",
         volume7d: "7日日均交易量 (美元)",
         marketCap: "市值 (美元)",
         correlationCoefficient: "相关系数 (ρ)",
         lastUpdated: "最后一次更新于：",
         calculating: "计算中...",
+        // Fee Prediction
+        feePrediction: "手续费预测",
+        currentTvl: "当前 TVL",
+        dailyVolume7d: "7日日均交易量 (美元)",
+        dailyVolume7dStdDev: "7日交易量标准差 (美元)",
+        feePercentage: "手续费百分比 (%)",
+        feePercentagePlaceholder: "例如：0.3 表示 0.3%",
+        dailyFeeApr: "日均手续费年化收益率",
+        dailyFee: "日均手续费 (%)",
+        pancakeswapFeeNote: "pancakeswap平台上，流动性提供者只能获得 84%的手续费收入 ，已自动调整计算值。",
+        pancakeswapFeeNoteLink: "点击查看详情",
+        calculateFeeApr: "计算手续费年化收益率",
         // Loading messages
         loadingFromGeckoTerminal: "正在从 GeckoTerminal API 加载...",
         loadingOhlcvData: "正在加载两个代币的 180 天 OHLCV 数据...",
@@ -1580,6 +1770,33 @@
       if (rawBirdeyeDesc) rawBirdeyeDesc.textContent = t('rawBirdeyeDesc');
 
       // Update IL Simulator
+      // Update Fee Prediction section
+      const feePredictionTitle = document.getElementById('feePredictionTitle');
+      if (feePredictionTitle) feePredictionTitle.textContent = t('feePrediction');
+      const currentTvlLabel = document.getElementById('currentTvlLabel');
+      if (currentTvlLabel) currentTvlLabel.textContent = t('currentTvl');
+      const dailyVolume7dLabel = document.getElementById('dailyVolume7dLabel');
+      if (dailyVolume7dLabel) dailyVolume7dLabel.textContent = t('dailyVolume7d');
+      const dailyVolume7dStdDevLabel = document.getElementById('dailyVolume7dStdDevLabel');
+      if (dailyVolume7dStdDevLabel) dailyVolume7dStdDevLabel.textContent = t('dailyVolume7dStdDev');
+      const feePercentageLabel = document.getElementById('feePercentageLabel');
+      if (feePercentageLabel) feePercentageLabel.textContent = t('feePercentage');
+      const feePercentageInput = document.getElementById('feePercentageInput');
+      if (feePercentageInput) feePercentageInput.placeholder = t('feePercentagePlaceholder');
+      const pancakeswapFeeNoteText = document.getElementById('pancakeswapFeeNoteText');
+      const pancakeswapFeeNoteLink = document.getElementById('pancakeswapFeeNoteLink');
+      if (pancakeswapFeeNoteText) pancakeswapFeeNoteText.textContent = t('pancakeswapFeeNote');
+      if (pancakeswapFeeNoteLink) pancakeswapFeeNoteLink.textContent = t('pancakeswapFeeNoteLink');
+      const feeDisplayLabel = document.getElementById('feeDisplayLabel');
+      if (feeDisplayLabel) {
+        const displayType = document.getElementById('feeDisplayStat')?.getAttribute("data-display-type");
+        if (displayType === "apr") {
+          feeDisplayLabel.textContent = t('dailyFeeApr');
+        } else {
+          feeDisplayLabel.textContent = t('dailyFee');
+        }
+      }
+      
       const ilSimulatorTitle = document.getElementById('ilSimulatorTitle');
       if (ilSimulatorTitle) ilSimulatorTitle.textContent = t('ilSimulator');
       const ilSimulatorSubtitle = document.getElementById('ilSimulatorSubtitle');
@@ -1592,10 +1809,20 @@
       if (simulationResultsLabel) simulationResultsLabel.textContent = t('simulationResults');
       const expectedILLabel = document.getElementById('expectedILLabel');
       if (expectedILLabel) expectedILLabel.textContent = t('expectedIL');
+      const dailyILLabel = document.getElementById('dailyILLabel');
+      if (dailyILLabel) dailyILLabel.textContent = t('dailyIL');
       const equivalentILAprLabel = document.getElementById('equivalentILAprLabel');
       if (equivalentILAprLabel) equivalentILAprLabel.textContent = t('equivalentILApr');
       const feeBreakEvenAprLabel = document.getElementById('feeBreakEvenAprLabel');
       if (feeBreakEvenAprLabel) feeBreakEvenAprLabel.textContent = t('feeBreakEvenApr');
+      const correlationLabel = document.getElementById('correlationLabel');
+      if (correlationLabel) correlationLabel.textContent = t('volumeIlCorrelation');
+      const totalReturnStdLabel = document.getElementById('totalReturnStdLabel');
+      if (totalReturnStdLabel) totalReturnStdLabel.textContent = t('totalReturnStdDev');
+      const sharpeRatioLabel = document.getElementById('sharpeRatioLabel');
+      if (sharpeRatioLabel) sharpeRatioLabel.textContent = t('sharpeRatio');
+      const worstCaseMddLabel = document.getElementById('worstCaseMddLabel');
+      if (worstCaseMddLabel) worstCaseMddLabel.textContent = t('worstCaseMdd');
       const ilIntervalLabel = document.getElementById('ilIntervalLabel');
       if (ilIntervalLabel) ilIntervalLabel.textContent = t('ilInterval');
       const stdDeviationILLabel = document.getElementById('stdDeviationILLabel');
@@ -1634,6 +1861,10 @@
       if (ilP0) ilP0.placeholder = t('currentPricePlaceholder');
       const ilSigmaDaily = document.getElementById('ilSigmaDaily');
       if (ilSigmaDaily) ilSigmaDaily.placeholder = t('dailyVolatilityPlaceholder');
+      const feeAprInputLabel = document.getElementById('feeAprInputLabel');
+      if (feeAprInputLabel) feeAprInputLabel.textContent = t('feeAprInput');
+      const ilFeeApr = document.getElementById('ilFeeApr');
+      if (ilFeeApr) ilFeeApr.placeholder = t('feeAprInputPlaceholder');
       const ilDays = document.getElementById('ilDays');
       if (ilDays) ilDays.placeholder = t('simulationDaysPlaceholder');
       const ilPaths = document.getElementById('ilPaths');
@@ -1659,12 +1890,18 @@
           label.textContent = t('numberOfPaths');
         } else if (text === 'Expected IL' || text === '预期 IL') {
           label.textContent = t('expectedIL');
+        } else if (text === 'Daily IL' || text === '日均 IL') {
+          label.textContent = t('dailyIL');
         } else if (text === 'Equivalent IL APR' || text.includes('等效 IL 年化收益率')) {
           label.textContent = t('equivalentILApr');
-        } else if (text === 'Fee Break-even APR' || text.includes('手续费盈亏平衡') || text === '盈亏平衡线') {
+        } else if (text === 'Fee Break-even APR' || text === 'Net APR' || text.includes('手续费盈亏平衡') || text === '盈亏平衡线') {
           label.textContent = t('feeBreakEvenApr');
         } else if (text.includes('5% – 95%') || text.includes('5% – 95%')) {
           label.textContent = t('ilInterval');
+        } else if (text.includes('7-Day Volume Std Dev') || text.includes('7日交易量标准差') || (text.includes('Volume Std Dev') && !text.includes('IL'))) {
+          label.textContent = t('dailyVolume7dStdDev');
+        } else if (text.includes('Total Return Std. Dev.') || text.includes('总回报率APR标准差')) {
+          label.textContent = t('totalReturnStdDev');
         } else if (text.includes('Std. deviation') || text.includes('标准差')) {
           label.textContent = t('stdDeviationIL');
         } else if (text === 'DEX' || text === '去中心化交易所') {
@@ -1679,8 +1916,16 @@
           label.textContent = t('marketCap');
         } else if (text.includes('Correlation Coefficient') || text.includes('相关系数')) {
           label.textContent = t('correlationCoefficient');
-        } else if (text === 'Last Updated' || text === '最后更新') {
+        } else if (text === 'Last Updated' || text === '最后更新' || text === '最后一次更新于：' || text.startsWith('最后一次更新于')) {
           label.textContent = t('lastUpdated');
+        } else if ((text.includes('数量') && !text.includes('路径数量') && !text.includes('模拟次数')) || (text.includes('Amount') && !text.includes('Number of') && !text.includes('Daily Average'))) {
+          // Handle token amount labels - try to extract symbol
+          // Match patterns like "SOL 数量", "USDC 数量", "SOL Amount", "USDC Amount"
+          const symbolMatch = text.match(/(\w+)\s+(数量|Amount)/);
+          if (symbolMatch && symbolMatch[1]) {
+            // Both token0Amount and token1Amount have the same format, so we can use either
+            label.textContent = t('token0Amount', { symbol: symbolMatch[1] });
+          }
         } else if (text.includes('价格 (美元)') || (text.includes('Price (USD)') && text.includes('价格'))) {
           // Handle price labels that might have Chinese text
           // Try to extract symbol from text like "SOL 价格 (美元)" or "{symbol} 价格 (美元)"
@@ -1749,6 +1994,8 @@
 
     // Initialize language on page load
     window.addEventListener('DOMContentLoaded', () => {
+      // 初始化手续费 APR 计算功能
+      setupFeeAprCalculation();
       updateLanguage();
     });
 
@@ -1919,6 +2166,7 @@
     let tvlVolumeChartInstance = null;
     let storedOhlcvData = []; // Store complete 180 days of data [ts, open0, high0, low0, close0, volume, tvl, trades, open1, high1, low1, close1]
     let currentBaseSymbol = "N/A";
+    let isPancakeSwap = false; // 标记当前池是否为PancakeSwap
     let currentQuoteSymbol = "N/A";
 
     async function fetchOhlcv(poolId, days, token = "base") {
@@ -2587,6 +2835,14 @@
       infoEl.innerHTML = "";
       rawEl.textContent = "";
       if (birdeyeRawEl) birdeyeRawEl.textContent = "";
+      
+      // 重置PancakeSwap标记
+      isPancakeSwap = false;
+      // 隐藏PancakeSwap手续费提示
+      const pancakeswapFeeNote = document.getElementById("pancakeswapFeeNote");
+      if (pancakeswapFeeNote) {
+        pancakeswapFeeNote.style.display = "none";
+      }
 
       try {
         if (!poolId || poolId.trim() === "") {
@@ -2796,10 +3052,43 @@
         let token0PerToken1 = null;
         
         // 方法1: 从储备量计算
-        const baseReserve = attr.base_token_reserve || attr.reserve_base || 
-                           (attr.base_token && attr.base_token.reserve);
-        const quoteReserve = attr.quote_token_reserve || attr.reserve_quote || 
-                            (attr.quote_token && attr.quote_token.reserve);
+        let baseReserve = attr.base_token_reserve || attr.reserve_base || 
+                         (attr.base_token && attr.base_token.reserve);
+        let quoteReserve = attr.quote_token_reserve || attr.reserve_quote || 
+                          (attr.quote_token && attr.quote_token.reserve);
+        
+        // 如果直接从 attributes 获取不到，尝试从 included 数组中查找
+        if ((!baseReserve || !quoteReserve) && json.included && Array.isArray(json.included)) {
+          const tokens = json.included.filter(item => item.type === 'token' && item.attributes);
+          
+          if (data.relationships) {
+            const baseTokenId = data.relationships?.base_token?.data?.id || 
+                               data.relationships?.base_token?.data?.data?.id;
+            const quoteTokenId = data.relationships?.quote_token?.data?.id || 
+                                data.relationships?.quote_token?.data?.data?.id;
+            
+            if (baseTokenId && !baseReserve) {
+              const baseToken = tokens.find(t => t.id === baseTokenId);
+              if (baseToken?.attributes) {
+                baseReserve = baseToken.attributes.reserve || 
+                             baseToken.attributes.base_token_reserve ||
+                             baseToken.attributes.amount;
+              }
+            }
+            
+            if (quoteTokenId && !quoteReserve) {
+              const quoteToken = tokens.find(t => t.id === quoteTokenId);
+              if (quoteToken?.attributes) {
+                quoteReserve = quoteToken.attributes.reserve || 
+                              quoteToken.attributes.quote_token_reserve ||
+                              quoteToken.attributes.amount;
+              }
+            }
+          }
+        }
+        
+        let baseAmount = null;
+        let quoteAmount = null;
         
         if (baseReserve && quoteReserve && Number(baseReserve) > 0) {
           const baseDecimals = attr.base_token_decimals || 
@@ -2807,8 +3096,8 @@
           const quoteDecimals = attr.quote_token_decimals || 
                                (attr.quote_token && attr.quote_token.decimals) || 6;
           
-          const baseAmount = Number(baseReserve) / Math.pow(10, baseDecimals);
-          const quoteAmount = Number(quoteReserve) / Math.pow(10, quoteDecimals);
+          baseAmount = Number(baseReserve) / Math.pow(10, baseDecimals);
+          quoteAmount = Number(quoteReserve) / Math.pow(10, quoteDecimals);
           
           if (baseAmount > 0) {
             // token1/token0 = quoteAmount / baseAmount
@@ -2842,7 +3131,93 @@
           token0PerToken1Display = toSignificantDigits(token0PerToken1, 12);
         }
         
-        const liquidityUsd = attr.reserve_in_usd || attr.liquidity_in_usd || "N/A";
+        // 获取 TVL 用于估算（如果储备量不可用）
+        const liquidityUsd = attr.reserve_in_usd || attr.liquidity_in_usd || null;
+        
+        // 如果 GeckoTerminal API 没有提供储备量数据，使用 TVL 和价格来估算
+        // 对于 AMM 池，在平衡状态下：token0_value ≈ token1_value ≈ TVL / 2
+        if ((!baseAmount || !quoteAmount) && liquidityUsd && liquidityUsd !== "N/A" && 
+            token0PriceUsd && token1PriceUsd &&
+            Number.isFinite(Number(liquidityUsd)) && Number(liquidityUsd) > 0 &&
+            Number.isFinite(Number(token0PriceUsd)) && Number(token0PriceUsd) > 0 &&
+            Number.isFinite(Number(token1PriceUsd)) && Number(token1PriceUsd) > 0) {
+          
+          const tvl = Number(liquidityUsd);
+          const token0Price = Number(token0PriceUsd);
+          const token1Price = Number(token1PriceUsd);
+          
+          // 使用价格比率来更准确地计算
+          // TVL = token0_amount * token0_price + token1_amount * token1_price
+          // 在平衡状态下：token0_amount * token0_price = token1_amount * token1_price
+          // 所以：token0_amount * token0_price = TVL / 2
+          
+          if (!baseAmount) {
+            baseAmount = (tvl / 2) / token0Price;
+          }
+          
+          if (!quoteAmount) {
+            quoteAmount = (tvl / 2) / token1Price;
+          }
+          
+          console.log("Estimated token amounts from TVL:", {
+            tvl: tvl,
+            token0Price: token0Price,
+            token1Price: token1Price,
+            estimatedBaseAmount: baseAmount,
+            estimatedQuoteAmount: quoteAmount
+          });
+        }
+        
+        // 格式化 token0 和 token1 数量用于显示
+        let token0AmountDisplay = "N/A";
+        let token1AmountDisplay = "N/A";
+        
+        if (baseAmount != null && Number.isFinite(baseAmount) && baseAmount > 0) {
+          token0AmountDisplay = toSignificantDigits(baseAmount, 12);
+        }
+        
+        if (quoteAmount != null && Number.isFinite(quoteAmount) && quoteAmount > 0) {
+          token1AmountDisplay = toSignificantDigits(quoteAmount, 12);
+        }
+        
+        // 调试：如果数量是 N/A，输出可用的属性以便调试
+        if (token0AmountDisplay === "N/A" || token1AmountDisplay === "N/A") {
+          console.log("Token amounts not available. Available fields:", {
+            baseReserve: baseReserve,
+            quoteReserve: quoteReserve,
+            base_token_reserve: attr.base_token_reserve,
+            quote_token_reserve: attr.quote_token_reserve,
+            reserve_base: attr.reserve_base,
+            reserve_quote: attr.reserve_quote,
+            reserve_in_usd: attr.reserve_in_usd,
+            liquidityUsd: liquidityUsd,
+            token0PriceUsd: token0PriceUsd,
+            token1PriceUsd: token1PriceUsd
+          });
+        }
+        
+        // 计算TVL: token0数量 * token0价格 + token1数量 * token1价格
+        let calculatedTvl = null;
+        let calculatedTvlDisplay = "N/A";
+        
+        if (baseAmount != null && quoteAmount != null && 
+            token0PriceUsd && token1PriceUsd &&
+            Number.isFinite(Number(token0PriceUsd)) && Number.isFinite(Number(token1PriceUsd)) &&
+            Number.isFinite(baseAmount) && Number.isFinite(quoteAmount)) {
+          const token0Value = baseAmount * Number(token0PriceUsd);
+          const token1Value = quoteAmount * Number(token1PriceUsd);
+          calculatedTvl = token0Value + token1Value;
+          
+          if (calculatedTvl > 0 && Number.isFinite(calculatedTvl)) {
+            if (calculatedTvl >= 1000000) {
+              calculatedTvlDisplay = `$${(calculatedTvl / 1000000).toFixed(2)}M`;
+            } else if (calculatedTvl >= 1000) {
+              calculatedTvlDisplay = `$${(calculatedTvl / 1000).toFixed(2)}K`;
+            } else {
+              calculatedTvlDisplay = `$${calculatedTvl.toFixed(2)}`;
+            }
+          }
+        }
         
         // 提取DEX信息，按优先级尝试多个可能的路径
         let dexName = "N/A";
@@ -2884,9 +3259,14 @@
         // 显示最近一次拉取时间的时间戳
         const lastUpdated = new Date().toISOString();
 
+        // 检查DEX名称是否包含pancakeswap（不区分大小写）
+        isPancakeSwap = dexName && dexName.toLowerCase().includes('pancakeswap');
+        const dexStatClass = isPancakeSwap ? 'stat clickable-stat dex-clickable' : 'stat';
+        const dexStatAttrs = isPancakeSwap ? `id="dexClickableStat" data-pool-id="${cleanId}"` : '';
+        
         infoEl.innerHTML = `
           <div class="stat-grid">
-            <div class="stat">
+            <div class="${dexStatClass}" ${dexStatAttrs}>
               <div class="stat-label">${t('dex')}</div>
               <div class="stat-value">${dexName}</div>
             </div>
@@ -2909,6 +3289,14 @@
               <div class="stat-value">
                 ${token1PriceDisplay} USD
               </div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">${t('token0Amount', { symbol: baseSymbol })}</div>
+              <div class="stat-value">${token0AmountDisplay}</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">${t('token1Amount', { symbol: quoteSymbol })}</div>
+              <div class="stat-value">${token1AmountDisplay}</div>
             </div>
             <div class="stat clickable-stat" id="priceRatioStat" 
                  data-ratio-type="token1-token0"
@@ -3077,17 +3465,24 @@
 
         // 计算7日日均成交量
         let volume7d = "N/A";
+        let volume7dRaw = null; // 保存原始数值用于 APR 计算
+        let volume7dStdDev = "N/A"; // 7日交易量标准差
+        let volume7dStdDevRaw = null; // 保存标准差原始数值用于风险指标计算
         if (storedOhlcvData.length > 0) {
           // 取最后7天的数据
           const last7Days = storedOhlcvData.slice(-7);
-          // 计算总成交量（volume在索引5）
-          const totalVolume = last7Days.reduce((sum, entry) => {
+          // 提取每日成交量（volume在索引5）
+          const dailyVolumes = last7Days.map(entry => {
             const vol = entry[5] || 0; // volume在索引5
-            return sum + (Number.isFinite(vol) ? Number(vol) : 0);
-          }, 0);
+            return Number.isFinite(vol) ? Number(vol) : 0;
+          });
+          
+          // 计算总成交量
+          const totalVolume = dailyVolumes.reduce((sum, vol) => sum + vol, 0);
           
           // 计算7日日均（总成交量除以7）
           const dailyAverage = totalVolume / 7;
+          volume7dRaw = dailyAverage; // 保存原始数值
           
           if (dailyAverage > 0) {
             // 格式化显示
@@ -3100,8 +3495,35 @@
             } else {
               volume7d = dailyAverage.toFixed(2);
             }
+            
+            // 计算标准差
+            const variance = dailyVolumes.reduce((sum, vol) => {
+              const diff = vol - dailyAverage;
+              return sum + (diff * diff);
+            }, 0) / 7;
+            const stdDev = Math.sqrt(variance);
+            
+            // 保存原始标准差值（用于风险指标计算）
+            volume7dStdDevRaw = stdDev;
+            
+            // 格式化标准差显示
+            if (stdDev > 0) {
+              if (Math.abs(stdDev) >= 1e9) {
+                volume7dStdDev = (stdDev / 1e9).toFixed(2) + "B";
+              } else if (Math.abs(stdDev) >= 1e6) {
+                volume7dStdDev = (stdDev / 1e6).toFixed(2) + "M";
+              } else if (Math.abs(stdDev) >= 1e3) {
+                volume7dStdDev = (stdDev / 1e3).toFixed(2) + "K";
+              } else {
+                volume7dStdDev = stdDev.toFixed(2);
+              }
+            } else {
+              volume7dStdDev = "0";
+              volume7dStdDevRaw = 0;
+            }
           } else {
             volume7d = "0";
+            volume7dStdDev = "0";
           }
         }
         
@@ -3109,6 +3531,51 @@
         const volume7dEl = document.getElementById("volume7dValue");
         if (volume7dEl) {
           volume7dEl.textContent = volume7d;
+        }
+        
+        // 更新手续费预测区域
+        const feePredictionCard = document.getElementById("feePredictionCard");
+        if (feePredictionCard) {
+          feePredictionCard.style.display = "block";
+          
+          // 更新 TVL 显示
+          const currentTvlValueEl = document.getElementById("currentTvlValue");
+          if (currentTvlValueEl) {
+            // 优先使用计算出的 TVL，否则使用 API 返回的 TVL
+            const tvlToShow = calculatedTvlDisplay !== "N/A" ? calculatedTvlDisplay : 
+                             (liquidityUsd && liquidityUsd !== "N/A" ? 
+                              (Number(liquidityUsd) >= 1000000 ? `$${(Number(liquidityUsd) / 1000000).toFixed(2)}M` :
+                               Number(liquidityUsd) >= 1000 ? `$${(Number(liquidityUsd) / 1000).toFixed(2)}K` :
+                               `$${Number(liquidityUsd).toFixed(2)}`) : "N/A");
+            currentTvlValueEl.textContent = tvlToShow;
+          }
+          
+          // 更新 7日日均交易量显示
+          const dailyVolume7dValueEl = document.getElementById("dailyVolume7dValue");
+          if (dailyVolume7dValueEl) {
+            dailyVolume7dValueEl.textContent = volume7d !== "N/A" ? `$${volume7d}` : "N/A";
+          }
+          
+          // 更新 7日交易量标准差显示
+          const dailyVolume7dStdDevValueEl = document.getElementById("dailyVolume7dStdDevValue");
+          if (dailyVolume7dStdDevValueEl) {
+            dailyVolume7dStdDevValueEl.textContent = volume7dStdDev !== "N/A" ? `$${volume7dStdDev}` : "N/A";
+            // 保存原始数值到 data 属性，用于风险指标计算
+            if (volume7dStdDevRaw !== null && Number.isFinite(volume7dStdDevRaw)) {
+              dailyVolume7dStdDevValueEl.setAttribute("data-raw-value", volume7dStdDevRaw.toString());
+            } else {
+              dailyVolume7dStdDevValueEl.removeAttribute("data-raw-value");
+            }
+          }
+          
+          // 保存原始数值到 data 属性，用于 APR 计算
+          if (currentTvlValueEl) {
+            const tvlRaw = calculatedTvl || (liquidityUsd && liquidityUsd !== "N/A" ? Number(liquidityUsd) : null);
+            currentTvlValueEl.setAttribute("data-raw-value", tvlRaw || "");
+          }
+          if (dailyVolume7dValueEl) {
+            dailyVolume7dValueEl.setAttribute("data-raw-value", volume7dRaw || "");
+          }
         }
 
         // 计算相关系数
@@ -3132,6 +3599,33 @@
         // 设置价格比率切换功能
         setupPriceRatioToggle();
         
+        // 设置DEX点击功能（如果是PancakeSwap）
+        setupDexClickHandler();
+        
+        // 显示/隐藏PancakeSwap手续费提示
+        const pancakeswapFeeNote = document.getElementById("pancakeswapFeeNote");
+        const pancakeswapFeeNoteText = document.getElementById("pancakeswapFeeNoteText");
+        const pancakeswapFeeNoteLink = document.getElementById("pancakeswapFeeNoteLink");
+        if (pancakeswapFeeNote) {
+          pancakeswapFeeNote.style.display = isPancakeSwap ? "block" : "none";
+          if (isPancakeSwap && pancakeswapFeeNoteText && pancakeswapFeeNoteLink) {
+            pancakeswapFeeNoteText.textContent = t('pancakeswapFeeNote');
+            pancakeswapFeeNoteLink.textContent = t('pancakeswapFeeNoteLink');
+          }
+        }
+        
+        // 设置手续费 APR 计算功能
+        setupFeeAprCalculation();
+        
+        // 数据加载完成后，自动触发一次手续费计算
+        setTimeout(() => {
+          const feePercentageInput = document.getElementById("feePercentageInput");
+          if (feePercentageInput) {
+            // 触发 input 事件以自动计算
+            feePercentageInput.dispatchEvent(new Event('input'));
+          }
+        }, 200);
+        
         // 更新HV按钮的显示状态
         updateHvButtonsVisibility();
       } catch (e) {
@@ -3142,6 +3636,141 @@
       } finally {
         loadingEl.textContent = "";
       }
+    }
+
+    function setupFeeAprCalculation() {
+      const feePercentageInput = document.getElementById("feePercentageInput");
+      const feeDisplayStat = document.getElementById("feeDisplayStat");
+      const feeDisplayLabel = document.getElementById("feeDisplayLabel");
+      const feeDisplayValue = document.getElementById("feeDisplayValue");
+      
+      if (!feePercentageInput || !feeDisplayStat || !feeDisplayLabel || !feeDisplayValue) return;
+      
+      // 存储计算出的值
+      let calculatedApr = null;
+      let calculatedDailyFee = null;
+      
+      // 更新显示的函数
+      function updateDisplay() {
+        const displayType = feeDisplayStat.getAttribute("data-display-type");
+        
+        if (displayType === "apr") {
+          feeDisplayLabel.textContent = t('dailyFeeApr');
+          if (calculatedApr !== null && Number.isFinite(calculatedApr) && calculatedApr > 0) {
+            feeDisplayValue.textContent = `${calculatedApr.toFixed(2)}%`;
+            feeDisplayValue.style.color = "#4CAF50";
+          } else {
+            feeDisplayValue.textContent = "-";
+            feeDisplayValue.style.color = "#999";
+          }
+        } else {
+          feeDisplayLabel.textContent = t('dailyFee');
+          if (calculatedDailyFee !== null && Number.isFinite(calculatedDailyFee) && calculatedDailyFee > 0) {
+            feeDisplayValue.textContent = `${calculatedDailyFee.toFixed(2)}%`;
+            feeDisplayValue.style.color = "#4CAF50";
+          } else {
+            feeDisplayValue.textContent = "-";
+            feeDisplayValue.style.color = "#999";
+          }
+        }
+      }
+      
+      // 计算 APR 的函数
+      function calculateApr() {
+        const feePercentage = parseFloat(feePercentageInput.value);
+        
+        if (isNaN(feePercentage) || feePercentage < 0 || feePercentage > 100) {
+          calculatedApr = null;
+          calculatedDailyFee = null;
+          updateDisplay();
+          return;
+        }
+        
+        // 获取 TVL 和 7日日均交易量的原始数值
+        const currentTvlValueEl = document.getElementById("currentTvlValue");
+        const dailyVolume7dValueEl = document.getElementById("dailyVolume7dValue");
+        
+        const tvlRaw = currentTvlValueEl ? parseFloat(currentTvlValueEl.getAttribute("data-raw-value")) : null;
+        const volume7dRaw = dailyVolume7dValueEl ? parseFloat(dailyVolume7dValueEl.getAttribute("data-raw-value")) : null;
+        
+        if (!tvlRaw || !volume7dRaw || tvlRaw <= 0 || volume7dRaw <= 0) {
+          calculatedApr = null;
+          calculatedDailyFee = null;
+          updateDisplay();
+          return;
+        }
+        
+        // 计算日均手续费收益
+        // 手续费百分比转换为小数（例如 0.3% = 0.003）
+        const feeRate = feePercentage / 100;
+        let dailyFeeAmount = volume7dRaw * feeRate;
+        
+        // 如果是PancakeSwap，流动性提供者只能获得84%的手续费收入
+        if (isPancakeSwap) {
+          dailyFeeAmount = dailyFeeAmount * 0.84;
+        }
+        
+        // 计算 APR: (日均收益 / TVL) * 365 * 100
+        calculatedApr = (dailyFeeAmount / tvlRaw) * 365 * 100;
+        
+        // 计算日均手续费百分比: (日均收益 / TVL) * 100
+        calculatedDailyFee = (dailyFeeAmount / tvlRaw) * 100;
+        
+        // 保存到 data 属性
+        feeDisplayStat.setAttribute("data-apr", calculatedApr || "");
+        feeDisplayStat.setAttribute("data-daily-fee", calculatedDailyFee || "");
+        
+        // 更新 IL 模拟器中的 Fee APR 输入框默认值
+        const ilFeeAprInput = document.getElementById("ilFeeApr");
+        if (ilFeeAprInput && calculatedApr !== null && Number.isFinite(calculatedApr) && calculatedApr > 0) {
+          ilFeeAprInput.value = calculatedApr.toFixed(2);
+        }
+        
+        updateDisplay();
+        
+        // 更新 Net APR（如果 IL 模拟已经运行过）
+        const dailyIlEl = document.getElementById("ilDaily");
+        const daysEl = document.getElementById("ilDays");
+        if (dailyIlEl && dailyIlEl.textContent !== "–" && daysEl) {
+          // 从显示文本中提取日均 IL
+          const dailyIlText = dailyIlEl.textContent.trim();
+          if (dailyIlText && dailyIlText !== "–") {
+            const dailyIlMatch = dailyIlText.match(/([-\d.]+)\s*%/);
+            if (dailyIlMatch) {
+              const dailyIl = parseFloat(dailyIlMatch[1]) / 100;
+              const days = Number(daysEl.value);
+              if (days > 0 && Number.isFinite(days)) {
+                updateNetApr(dailyIl, days);
+              } else {
+                // 即使没有IL数据，也尝试计算风险指标（只计算手续费部分）
+                calculateAndDisplayRiskMetrics(null, null, null);
+              }
+            }
+          } else {
+            // 即使没有IL数据，也尝试计算风险指标（只计算手续费部分）
+            calculateAndDisplayRiskMetrics(null, null, null);
+          }
+        } else {
+          // 即使没有IL数据，也尝试计算风险指标（只计算手续费部分）
+          calculateAndDisplayRiskMetrics(null, null, null);
+        }
+      }
+      
+      // 切换显示类型
+      feeDisplayStat.onclick = function() {
+        const currentType = this.getAttribute("data-display-type");
+        const newType = currentType === "apr" ? "dailyFee" : "apr";
+        this.setAttribute("data-display-type", newType);
+        updateDisplay();
+      };
+      
+      // 输入框变化时自动计算
+      feePercentageInput.addEventListener("input", calculateApr);
+      
+      // 页面加载时自动计算一次（使用默认值 0.01）
+      setTimeout(() => {
+        calculateApr();
+      }, 100);
     }
 
     function setupPriceRatioToggle() {
@@ -3170,6 +3799,19 @@
           if (labelEl) labelEl.textContent = `${quoteSymbol} / ${baseSymbol}`;
           if (valueEl) valueEl.textContent = `1 ${quoteSymbol} = ${token1PerToken0} ${baseSymbol}`;
         }
+      };
+    }
+
+    function setupDexClickHandler() {
+      const dexClickableEl = document.getElementById("dexClickableStat");
+      if (!dexClickableEl) return;
+      
+      const poolId = dexClickableEl.getAttribute("data-pool-id");
+      if (!poolId) return;
+      
+      dexClickableEl.onclick = function() {
+        const pancakeswapUrl = `https://pancakeswap.finance/liquidity/pool/solana/${poolId}`;
+        window.open(pancakeswapUrl, '_blank');
       };
     }
 
@@ -4027,6 +4669,310 @@
       upperEl.value = upperBound.toFixed(4);
     }
 
+    // 更新 Net APR 显示的函数
+    // dailyIl: 日均IL（小数形式，例如 -0.00083 表示 -0.083%）
+    // days: 模拟天数
+    function updateNetApr(dailyIl, days) {
+      const feeBreakEvenEl = document.getElementById("ilFeeBreakEven");
+      if (!feeBreakEvenEl) return;
+      
+      const statContainer = feeBreakEvenEl.closest('.stat');
+      const toPercent = (x) => (x * 100).toFixed(3) + " %";
+      
+      // 获取年化手续费 APR
+      // 优先使用 ilFeeApr 输入框的值，如果没有则从 feeDisplayStat 获取
+      let annualFeeApr = null;
+      const ilFeeAprInput = document.getElementById("ilFeeApr");
+      if (ilFeeAprInput && ilFeeAprInput.value !== "" && !isNaN(parseFloat(ilFeeAprInput.value))) {
+        annualFeeApr = parseFloat(ilFeeAprInput.value) / 100; // 转换为小数形式（例如 0.15 表示 15%）
+      } else {
+        const feeDisplayStat = document.getElementById("feeDisplayStat");
+        if (feeDisplayStat) {
+          const aprValue = feeDisplayStat.getAttribute("data-apr");
+          if (aprValue && aprValue !== "") {
+            annualFeeApr = parseFloat(aprValue) / 100; // 转换为小数形式（例如 0.15 表示 15%）
+          }
+        }
+      }
+      
+      // 计算 Net APR = ((1+日均手续费收入apr)*(1+日均il))^365 - 1
+      let netApr = null;
+      if (annualFeeApr !== null && Number.isFinite(annualFeeApr) && 
+          dailyIl !== null && Number.isFinite(dailyIl) && 
+          days !== null && Number.isFinite(days) && days > 0) {
+        // 将年化手续费APR转换为日均手续费收入apr
+        const dailyFeeApr = annualFeeApr / 365;
+        
+        // 计算：((1+日均手续费收入apr)*(1+日均il))^365 - 1
+        const dailyMultiplier = (1 + dailyFeeApr) * (1 + dailyIl);
+        netApr = Math.pow(dailyMultiplier, 365) - 1;
+      }
+      
+      if (netApr !== null && Number.isFinite(netApr)) {
+        feeBreakEvenEl.textContent = toPercent(netApr);
+        
+        // 根据正负值应用光晕效果
+        if (statContainer) {
+          // 移除之前的光晕类
+          statContainer.classList.remove('glow-green', 'glow-red');
+          
+          if (netApr > 0) {
+            statContainer.classList.add('glow-green');
+          } else if (netApr < 0) {
+            statContainer.classList.add('glow-red');
+          }
+        }
+      } else {
+        feeBreakEvenEl.textContent = "–";
+        // 移除光晕效果
+        if (statContainer) {
+          statContainer.classList.remove('glow-green', 'glow-red');
+        }
+      }
+      
+      // 计算并显示相关性、总回报率标准差和夏普比率
+      calculateAndDisplayRiskMetrics(netApr, dailyIl, days);
+    }
+
+    /**
+     * 计算volume变化率和价格变化率（导致IL）的相关性
+     * 使用历史数据计算价格变化率（对数收益率）和volume变化率的相关性
+     * @returns {number|null} - 相关系数，如果数据不足返回null
+     */
+    function calculateVolumePriceCorrelation() {
+      if (!storedOhlcvData || storedOhlcvData.length < 7) {
+        return null; // 至少需要7天数据
+      }
+
+      // 使用最近30天的数据（如果可用）
+      const lookbackDays = Math.min(30, storedOhlcvData.length - 1);
+      const recentData = storedOhlcvData.slice(-lookbackDays);
+      
+      // 提取价格比率（token0/token1）和交易量
+      const priceRatios = [];
+      const volumes = [];
+      
+      for (const entry of recentData) {
+        const close0 = entry[4];  // token0收盘价
+        const close1 = entry[11]; // token1收盘价
+        const volume = entry[5];  // 交易量
+        
+        if (close0 !== null && close1 !== null && volume !== null &&
+            !isNaN(Number(close0)) && !isNaN(Number(close1)) && !isNaN(Number(volume)) &&
+            Number(close0) > 0 && Number(close1) > 0 && Number(volume) > 0) {
+          const priceRatio = Number(close0) / Number(close1);
+          priceRatios.push(priceRatio);
+          volumes.push(Number(volume));
+        }
+      }
+
+      if (priceRatios.length < 2 || volumes.length < 2) {
+        return null;
+      }
+
+      // 计算价格比率的变化率（对数收益率）和交易量的变化率
+      const priceReturns = [];
+      const volumeReturns = [];
+      
+      for (let i = 1; i < priceRatios.length; i++) {
+        const prevPrice = priceRatios[i - 1];
+        const currPrice = priceRatios[i];
+        const prevVolume = volumes[i - 1];
+        const currVolume = volumes[i];
+        
+        if (prevPrice > 0 && currPrice > 0 && prevVolume > 0 && currVolume > 0) {
+          priceReturns.push(Math.log(currPrice / prevPrice));
+          volumeReturns.push(Math.log(currVolume / prevVolume));
+        }
+      }
+
+      if (priceReturns.length < 2) {
+        return null;
+      }
+
+      // 计算均值
+      const meanPrice = priceReturns.reduce((a, b) => a + b, 0) / priceReturns.length;
+      const meanVolume = volumeReturns.reduce((a, b) => a + b, 0) / volumeReturns.length;
+
+      // 计算协方差和方差
+      let covariance = 0;
+      let variancePrice = 0;
+      let varianceVolume = 0;
+
+      for (let i = 0; i < priceReturns.length; i++) {
+        const diffPrice = priceReturns[i] - meanPrice;
+        const diffVolume = volumeReturns[i] - meanVolume;
+        covariance += diffPrice * diffVolume;
+        variancePrice += diffPrice * diffPrice;
+        varianceVolume += diffVolume * diffVolume;
+      }
+
+      // 使用样本方差（n-1）
+      const n = priceReturns.length;
+      covariance = covariance / (n - 1);
+      variancePrice = variancePrice / (n - 1);
+      varianceVolume = varianceVolume / (n - 1);
+
+      const stdPrice = Math.sqrt(variancePrice);
+      const stdVolume = Math.sqrt(varianceVolume);
+
+      // 计算相关系数
+      if (stdPrice === 0 || stdVolume === 0) {
+        return null;
+      }
+
+      const correlation = covariance / (stdPrice * stdVolume);
+      return correlation;
+    }
+
+    /**
+     * 计算并显示风险指标：相关性、总回报率标准差、夏普比率
+     * @param {number|null} netApr - Net APR（小数形式）
+     * @param {number|null} dailyIl - 日均IL（小数形式）
+     * @param {number|null} days - 模拟天数
+     */
+    function calculateAndDisplayRiskMetrics(netApr, dailyIl, days) {
+      const correlationEl = document.getElementById("volumeIlCorrelation");
+      const totalReturnStdEl = document.getElementById("totalReturnStd");
+      const sharpeRatioEl = document.getElementById("sharpeRatio");
+      
+      if (!correlationEl || !totalReturnStdEl || !sharpeRatioEl) return;
+      
+      const toPercent = (x) => (x * 100).toFixed(3) + " %";
+      const toDecimal = (x) => x.toFixed(4);
+      
+      // 1. 计算相关性
+      const correlation = calculateVolumePriceCorrelation();
+      if (correlation !== null && Number.isFinite(correlation)) {
+        correlationEl.textContent = toDecimal(correlation);
+      } else {
+        correlationEl.textContent = "–";
+      }
+      
+      // 2. 获取IL标准差（年化）
+      const ilStdEl = document.getElementById("ilStd");
+      let ilStdDev = null;
+      if (ilStdEl) {
+        // 优先从data属性获取原始值
+        const rawValue = ilStdEl.getAttribute("data-raw-value");
+        if (rawValue) {
+          ilStdDev = parseFloat(rawValue); // 已经是小数形式
+          // 年化：如果std是总IL的标准差，需要转换为年化标准差
+          // 假设std是总IL的标准差，年化标准差 = std / sqrt(days) * sqrt(365)
+          if (days !== null && Number.isFinite(days) && days > 0) {
+            ilStdDev = ilStdDev / Math.sqrt(days) * Math.sqrt(365);
+          }
+        } else if (ilStdEl.textContent !== "–") {
+          // 如果没有data属性，从文本解析
+          const ilStdText = ilStdEl.textContent.trim();
+          const ilStdMatch = ilStdText.match(/([-\d.]+)\s*%/);
+          if (ilStdMatch) {
+            ilStdDev = parseFloat(ilStdMatch[1]) / 100; // 转换为小数形式
+            // 年化处理
+            if (days !== null && Number.isFinite(days) && days > 0) {
+              ilStdDev = ilStdDev / Math.sqrt(days) * Math.sqrt(365);
+            }
+          }
+        }
+      }
+      
+      // 3. 获取手续费收入标准差
+      // 手续费收入标准差 = 手续费率 × 交易量标准差
+      const feeDisplayStat = document.getElementById("feeDisplayStat");
+      const dailyVolume7dStdDevValueEl = document.getElementById("dailyVolume7dStdDevValue");
+      let feeIncomeStdDev = null;
+      
+      if (feeDisplayStat && dailyVolume7dStdDevValueEl) {
+        const feePercentageInput = document.getElementById("feePercentageInput");
+        if (feePercentageInput) {
+          const feePercentage = parseFloat(feePercentageInput.value);
+          if (!isNaN(feePercentage) && feePercentage >= 0 && feePercentage <= 100) {
+            const feeRate = feePercentage / 100; // 手续费率（小数形式）
+            
+            // 获取交易量标准差的原始值（从data属性）
+            const rawValue = dailyVolume7dStdDevValueEl.getAttribute("data-raw-value");
+            const volumeStdDevRaw = rawValue ? parseFloat(rawValue) : null;
+            
+            if (volumeStdDevRaw !== null && volumeStdDevRaw > 0) {
+              // 手续费收入标准差 = 手续费率 × 交易量标准差
+              feeIncomeStdDev = feeRate * volumeStdDevRaw;
+              
+              // 转换为相对于TVL的百分比标准差（年化）
+              const currentTvlValueEl = document.getElementById("currentTvlValue");
+              if (currentTvlValueEl) {
+                const tvlRaw = parseFloat(currentTvlValueEl.getAttribute("data-raw-value"));
+                if (tvlRaw && tvlRaw > 0) {
+                  // 日均手续费收入标准差（相对于TVL的百分比）
+                  const dailyFeeIncomeStdDevPct = feeIncomeStdDev / tvlRaw;
+                  // 年化：乘以√365
+                  feeIncomeStdDev = dailyFeeIncomeStdDevPct * Math.sqrt(365);
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      // 4. 计算总回报率标准差
+      // σ_R = √(σ_Fee² + σ_IL² + 2·ρ·σ_Fee·σ_IL)
+      let totalReturnStdDev = null;
+      if (feeIncomeStdDev !== null && ilStdDev !== null && 
+          Number.isFinite(feeIncomeStdDev) && Number.isFinite(ilStdDev)) {
+        if (correlation !== null && Number.isFinite(correlation)) {
+          // 使用相关性计算
+          totalReturnStdDev = Math.sqrt(
+            Math.pow(feeIncomeStdDev, 2) + 
+            Math.pow(ilStdDev, 2) + 
+            2 * correlation * feeIncomeStdDev * ilStdDev
+          );
+        } else {
+          // 假设独立（相关性为0）
+          totalReturnStdDev = Math.sqrt(
+            Math.pow(feeIncomeStdDev, 2) + 
+            Math.pow(ilStdDev, 2)
+          );
+        }
+      }
+      
+      if (totalReturnStdDev !== null && Number.isFinite(totalReturnStdDev)) {
+        totalReturnStdEl.textContent = toPercent(totalReturnStdDev);
+      } else {
+        totalReturnStdEl.textContent = "–";
+      }
+      
+      // 5. 计算夏普比率
+      // Sharpe Ratio = (E[R] - R_f) / σ_R
+      // 使用默认无风险利率 4%（年化）
+      const riskFreeRate = 0.04; // 4% 年化
+      let sharpeRatio = null;
+      
+      if (netApr !== null && Number.isFinite(netApr) && 
+          totalReturnStdDev !== null && Number.isFinite(totalReturnStdDev) &&
+          totalReturnStdDev > 0) {
+        sharpeRatio = (netApr - riskFreeRate) / totalReturnStdDev;
+      }
+      
+      if (sharpeRatio !== null && Number.isFinite(sharpeRatio)) {
+        sharpeRatioEl.textContent = toDecimal(sharpeRatio);
+        // 根据夏普比率值应用颜色
+        const sharpeStatContainer = sharpeRatioEl.closest('.stat');
+        if (sharpeStatContainer) {
+          sharpeStatContainer.classList.remove('glow-green', 'glow-red');
+          if (sharpeRatio > 1) {
+            sharpeStatContainer.classList.add('glow-green');
+          } else if (sharpeRatio < 0) {
+            sharpeStatContainer.classList.add('glow-red');
+          }
+        }
+      } else {
+        sharpeRatioEl.textContent = "–";
+        const sharpeStatContainer = sharpeRatioEl.closest('.stat');
+        if (sharpeStatContainer) {
+          sharpeStatContainer.classList.remove('glow-green', 'glow-red');
+        }
+      }
+    }
+
     function runIlSimulation() {
       const lowerEl = document.getElementById("ilLower");
       const upperEl = document.getElementById("ilUpper");
@@ -4038,6 +4984,7 @@
       const errorEl = document.getElementById("ilError");
 
       const expectedEl = document.getElementById("ilExpected");
+      const dailyIlEl = document.getElementById("ilDaily");
       const ciEl = document.getElementById("ilCI");
       const stdEl = document.getElementById("ilStd");
       const aprEl = document.getElementById("ilApr");
@@ -4046,10 +4993,18 @@
       errorEl.textContent = "";
       statusEl.textContent = t('runningSimulation');
       expectedEl.textContent = "–";
+      if (dailyIlEl) dailyIlEl.textContent = "–";
       ciEl.textContent = "–";
       stdEl.textContent = "–";
       if (aprEl) aprEl.textContent = "–";
-      if (feeBreakEvenEl) feeBreakEvenEl.textContent = "–";
+      if (feeBreakEvenEl) {
+        feeBreakEvenEl.textContent = "–";
+        // 移除光晕效果
+        const statContainer = feeBreakEvenEl.closest('.stat');
+        if (statContainer) {
+          statContainer.classList.remove('glow-green', 'glow-red');
+        }
+      }
 
       const Pl = Number(lowerEl.value);
       const Pu = Number(upperEl.value);
@@ -4108,63 +5063,104 @@
       const y0 = xy0.y;
 
       const ils = new Array(paths);
+      const mdds = new Array(paths); // 存储每条路径的MDD
       // 计算要展示的路径数量：模拟次数^(1/3)，向下取整，上限为100
       const pathsToShow = Math.min(Math.floor(Math.pow(paths, 1/3)), 100);
       // 展示天数上限为365
       const daysToShow = Math.min(days, 365);
       const pathPricesArray = []; // 存储多条路径的每日价格
 
+      // 获取日均手续费APR（用于计算累积回报）
+      // 优先使用 ilFeeApr 输入框的值，如果没有则从 feeDisplayStat 获取
+      let dailyFeeApr = 0;
+      const ilFeeAprInput = document.getElementById("ilFeeApr");
+      if (ilFeeAprInput && ilFeeAprInput.value !== "" && !isNaN(parseFloat(ilFeeAprInput.value))) {
+        const annualFeeApr = parseFloat(ilFeeAprInput.value) / 100; // 转换为小数形式
+        dailyFeeApr = annualFeeApr / 365; // 日均手续费APR
+      } else {
+        const feeDisplayStat = document.getElementById("feeDisplayStat");
+        if (feeDisplayStat) {
+          const aprValue = feeDisplayStat.getAttribute("data-apr");
+          if (aprValue && aprValue !== "") {
+            const annualFeeApr = parseFloat(aprValue) / 100; // 转换为小数形式
+            dailyFeeApr = annualFeeApr / 365; // 日均手续费APR
+          }
+        }
+      }
+
       for (let i = 0; i < paths; i++) {
+        let currentPrice = P0;
+        let cumulativeReturn = 1.0; // 初始累积回报为1
+        let peak = 1.0; // 峰值
+        let maxDrawdown = 0; // 最大回撤
+        
         // 对于前pathsToShow条路径，记录每日价格
-        if (i < pathsToShow) {
-          const pathPrices = [P0]; // 从当前价格开始
-          let currentPrice = P0;
+        const shouldRecordPath = i < pathsToShow;
+        const pathPrices = shouldRecordPath ? [P0] : null;
+        
+        // 计算初始HODL价值（作为基准）
+        const vHodl0 = x0 * P0 + y0;
+        let prevPrice = P0;
+        let prevVLp = vHodl0; // 初始LP价值等于HODL价值
+        
+        // 逐日计算价格变化和累积回报
+        for (let day = 1; day <= days; day++) {
+          const z = randnBoxMuller();
+          const logP = Math.log(currentPrice) +
+            (-0.5 * sigmaDaily * sigmaDaily) * 1 + // 每天的时间步长为1
+            sigmaDaily * Math.sqrt(1) * z;
+          currentPrice = Math.exp(logP);
           
-          // 逐日计算价格变化，完整计算所有天数用于IL计算，但只记录前365天用于展示
-          for (let day = 1; day <= days; day++) {
-            const z = randnBoxMuller();
-            const logP = Math.log(currentPrice) +
-              (-0.5 * sigmaDaily * sigmaDaily) * 1 + // 每天的时间步长为1
-              sigmaDaily * Math.sqrt(1) * z;
-            currentPrice = Math.exp(logP);
-            // 只记录前365天的数据用于图表展示
-            if (day <= daysToShow) {
-              pathPrices.push(currentPrice);
-            }
+          // 计算当日的LP价值
+          const xyT = uniswapV3XYForPrice(currentPrice, Pl, Pu, L);
+          const xT = xyT.x;
+          const yT = xyT.y;
+          const vLp = xT * currentPrice + yT;
+          
+          // 计算每日回报：
+          // 1. LP价值变化（考虑IL）：相对于前一日LP价值
+          const lpReturn = vLp / prevVLp;
+          // 2. 手续费收入：每日手续费相对于初始TVL的比例
+          // 手续费是复利的，所以每日增长因子 = 1 + dailyFeeApr
+          const feeReturn = 1 + dailyFeeApr;
+          // 3. 累积回报 = 累积回报 * LP回报 * 手续费回报
+          cumulativeReturn = cumulativeReturn * lpReturn * feeReturn;
+          
+          // 更新峰值
+          if (cumulativeReturn > peak) {
+            peak = cumulativeReturn;
           }
           
-          pathPricesArray.push(pathPrices);
+          // 计算当前回撤
+          const drawdown = (peak - cumulativeReturn) / peak;
+          if (drawdown > maxDrawdown) {
+            maxDrawdown = drawdown;
+          }
           
-          // 使用最后一次的价格（完整模拟天数后的价格）计算IL
-          const PT = currentPrice;
-          const xyT = uniswapV3XYForPrice(PT, Pl, Pu, L);
-          const xT = xyT.x;
-          const yT = xyT.y;
-
-          const vHodl = x0 * PT + y0;
-          const vLp = xT * PT + yT;
-
-          const il = vLp / vHodl - 1;
-          ils[i] = il;
-        } else {
-          // 其他模拟路径，直接计算最终价格（保持原有逻辑）
-          const z = randnBoxMuller();
-          const logPT =
-            Math.log(P0) +
-            (-0.5 * sigmaDaily * sigmaDaily) * T +
-            sigmaDaily * Math.sqrt(T) * z;
-          const PT = Math.exp(logPT);
-
-          const xyT = uniswapV3XYForPrice(PT, Pl, Pu, L);
-          const xT = xyT.x;
-          const yT = xyT.y;
-
-          const vHodl = x0 * PT + y0;
-          const vLp = xT * PT + yT;
-
-          const il = vLp / vHodl - 1;
-          ils[i] = il;
+          // 更新前一日值
+          prevPrice = currentPrice;
+          prevVLp = vLp;
+          
+          // 只记录前365天的数据用于图表展示
+          if (shouldRecordPath && day <= daysToShow) {
+            pathPrices.push(currentPrice);
+          }
         }
+        
+        if (shouldRecordPath) {
+          pathPricesArray.push(pathPrices);
+        }
+        
+        // 保存最终IL和MDD
+        const PT = currentPrice;
+        const xyT = uniswapV3XYForPrice(PT, Pl, Pu, L);
+        const xT = xyT.x;
+        const yT = xyT.y;
+        const vHodl = x0 * PT + y0;
+        const vLp = xT * PT + yT;
+        const il = vLp / vHodl - 1;
+        ils[i] = il;
+        mdds[i] = maxDrawdown;
       }
 
       ils.sort((a, b) => a - b);
@@ -4189,22 +5185,37 @@
       const toPercent = (x) => (x * 100).toFixed(3) + " %";
 
       expectedEl.textContent = toPercent(mean);
+      
+      // 计算日均 IL = 预期 IL / 模拟天数
+      // mean 是小数形式（例如 -0.025 表示 -2.5%）
+      const dailyIl = mean / days;
+      if (dailyIlEl) {
+        dailyIlEl.textContent = toPercent(dailyIl);
+      }
+      
       ciEl.textContent = `${toPercent(il5)}  ~  ${toPercent(il95)}`;
       stdEl.textContent = toPercent(std);
+      // 保存IL标准差的原始值（小数形式）到data属性，用于风险指标计算
+      stdEl.setAttribute("data-raw-value", std.toString());
 
       // 计算等效 IL APR：将 IL 年化
-      // mean 是小数形式（例如 -0.025 表示 -2.5%）
       // 等效 APR = (mean / days) * 365（小数形式，例如 -0.30417 表示 -30.417%）
       const equivalentIlApr = (mean / days) * 365;
       if (aprEl) {
         aprEl.textContent = toPercent(equivalentIlApr);
       }
 
-      // 计算手续费盈亏平衡线 APR：需要多少手续费 APR 才能抵消 IL 损失
-      // 手续费盈亏平衡线 = |等效 IL APR|
-      const feeBreakEvenApr = Math.abs(equivalentIlApr);
-      if (feeBreakEvenEl) {
-        feeBreakEvenEl.textContent = toPercent(feeBreakEvenApr);
+      // 计算 Net APR：使用日均IL和日均手续费收入apr
+      updateNetApr(dailyIl, days);
+      
+      // 计算95% worst-case MDD
+      mdds.sort((a, b) => a - b); // 按升序排序
+      const idx95Mdd = Math.floor(0.95 * (mdds.length - 1));
+      const worstCaseMdd = mdds[idx95Mdd];
+      
+      const worstCaseMddEl = document.getElementById("worstCaseMdd");
+      if (worstCaseMddEl) {
+        worstCaseMddEl.textContent = toPercent(worstCaseMdd);
       }
 
       const minIl = ils[0];
